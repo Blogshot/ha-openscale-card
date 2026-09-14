@@ -107,30 +107,8 @@ export class OpenscaleCard extends LitElement {
       gap: 8px;
     }
     .donut-ring {
-      width: 160px;
-      height: 160px;
-    }
-    .donut-legend {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 4px 14px;
-    }
-    .legend-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--secondary-text-color, #888);
-    }
-    .legend-row .dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .legend-row .value {
-      color: var(--primary-text-color, #222);
+      width: 100%;
+      height: auto;
     }
     .donut-extra {
       width: 100%;
