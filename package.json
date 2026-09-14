@@ -1,0 +1,31 @@
+{
+  "name": "ha-openscale-card",
+  "version": "0.1.0",
+  "description": "Home Assistant Lovelace card that visualizes openScale-sync body composition data as a schematic body silhouette.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "home-assistant",
+    "hacs",
+    "lovelace",
+    "openscale"
+  ],
+  "dependencies": {
+    "lit": "^3.2.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.0",
+    "rollup": "^4.24.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

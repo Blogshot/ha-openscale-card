@@ -1,0 +1,21 @@
+<svg width="480" height="320" viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+  <rect width="480" height="320" fill="#1c1f26" rx="12"/>
+  <rect x="6" y="6" width="468" height="308" rx="10" fill="none" stroke="#3a4150" stroke-width="2" stroke-dasharray="6 6"/>
+  <g fill="#8892a6">
+    <circle cx="150" cy="90" r="18"/>
+    <path d="M126 112 Q150 103 174 112 L182 178 Q150 194 118 178 Z"/>
+    <path d="M182 124 L210 168 L200 178 L176 138 Z"/>
+    <path d="M118 124 L90 168 L100 178 L124 138 Z"/>
+    <path d="M122 178 L114 250 L130 250 L140 194 Z"/>
+    <path d="M178 178 L186 250 L170 250 L160 194 Z"/>
+  </g>
+  <line x1="182" y1="130" x2="230" y2="118" stroke="#5b8def" stroke-width="1.5"/>
+  <line x1="118" y1="160" x2="70" y2="170" stroke="#e6b85b" stroke-width="1.5"/>
+  <line x1="140" y1="220" x2="90" y2="235" stroke="#5bd18b" stroke-width="1.5"/>
+  <text x="240" y="270" font-family="system-ui, sans-serif" font-size="20" fill="#cfd6e4" text-anchor="middle">
+    Preview placeholder — Callouts mode
+  </text>
+  <text x="240" y="295" font-family="system-ui, sans-serif" font-size="13" fill="#6b7280" text-anchor="middle">
+    Replace with a real screenshot once implemented
+  </text>
+</svg>

@@ -1,0 +1,32 @@
+<svg width="480" height="320" viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+  <rect width="480" height="320" fill="#1c1f26" rx="12"/>
+  <rect x="6" y="6" width="468" height="308" rx="10" fill="none" stroke="#3a4150" stroke-width="2" stroke-dasharray="6 6"/>
+  <g fill="#8892a6" transform="translate(60 60) scale(0.75)">
+    <circle cx="110" cy="30" r="16"/>
+    <path d="M90 50 Q110 42 130 50 L136 108 Q110 122 84 108 Z"/>
+    <path d="M136 60 L160 98 L152 106 L130 72 Z"/>
+    <path d="M84 60 L60 98 L68 106 L90 72 Z"/>
+    <path d="M88 108 Q110 118 132 108 L126 150 Q110 158 94 150 Z" fill="#e6b85b"/>
+    <path d="M94 150 L88 208 L102 208 L110 158 Z"/>
+    <path d="M126 150 L132 208 L118 208 L110 158 Z"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="14" fill="#cfd6e4">
+    <text x="230" y="90">Weight</text>
+    <text x="420" y="90" text-anchor="end" font-weight="700" fill="#fff">68.4 kg</text>
+    <line x1="230" y1="98" x2="420" y2="98" stroke="#3a4150"/>
+    <text x="230" y="122">BMI</text>
+    <text x="420" y="122" text-anchor="end" font-weight="700" fill="#fff">21.8</text>
+    <line x1="230" y1="130" x2="420" y2="130" stroke="#3a4150"/>
+    <text x="230" y="154">Body Fat</text>
+    <text x="420" y="154" text-anchor="end" font-weight="700" fill="#fff">24.1 %</text>
+    <line x1="230" y1="162" x2="420" y2="162" stroke="#3a4150"/>
+    <text x="230" y="186">Water</text>
+    <text x="420" y="186" text-anchor="end" font-weight="700" fill="#fff">55.2 %</text>
+  </g>
+  <text x="240" y="270" font-family="system-ui, sans-serif" font-size="20" fill="#cfd6e4" text-anchor="middle">
+    Preview placeholder — Grid mode
+  </text>
+  <text x="240" y="295" font-family="system-ui, sans-serif" font-size="13" fill="#6b7280" text-anchor="middle">
+    Replace with a real screenshot once implemented
+  </text>
+</svg>

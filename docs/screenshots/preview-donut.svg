@@ -1,0 +1,33 @@
+<svg width="480" height="320" viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+  <rect width="480" height="320" fill="#1c1f26" rx="12"/>
+  <rect x="6" y="6" width="468" height="308" rx="10" fill="none" stroke="#3a4150" stroke-width="2" stroke-dasharray="6 6"/>
+  <g transform="translate(150 130)">
+    <g transform="rotate(-90)">
+      <circle r="72" fill="none" stroke="#5b8def" stroke-width="14" stroke-dasharray="247 452" stroke-dashoffset="0"/>
+      <circle r="72" fill="none" stroke="#5bd18b" stroke-width="14" stroke-dasharray="80 452" stroke-dashoffset="-249"/>
+      <circle r="72" fill="none" stroke="#e6b85b" stroke-width="14" stroke-dasharray="107 452" stroke-dashoffset="-331"/>
+      <circle r="72" fill="none" stroke="#e05b5b" stroke-width="14" stroke-dasharray="12 452" stroke-dashoffset="-440"/>
+    </g>
+    <g fill="#cfd6e4" transform="scale(0.55) translate(-110 -115)">
+      <circle cx="110" cy="30" r="16"/>
+      <path d="M90 50 Q110 42 130 50 L136 108 Q110 122 84 108 Z"/>
+      <path d="M136 60 L160 98 L152 106 L130 72 Z"/>
+      <path d="M84 60 L60 98 L68 106 L90 72 Z"/>
+      <path d="M88 108 Q110 118 132 108 L126 150 Q110 158 94 150 Z"/>
+      <path d="M94 150 L88 208 L102 208 L110 158 Z"/>
+      <path d="M126 150 L132 208 L118 208 L110 158 Z"/>
+    </g>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="13" fill="#cfd6e4">
+    <circle cx="270" cy="80" r="5" fill="#5b8def"/><text x="282" y="85">Water 55%</text>
+    <circle cx="270" cy="105" r="5" fill="#5bd18b"/><text x="282" y="110">Muscle 18%</text>
+    <circle cx="270" cy="130" r="5" fill="#e6b85b"/><text x="282" y="135">Fat 24%</text>
+    <circle cx="270" cy="155" r="5" fill="#e05b5b"/><text x="282" y="160">Bone 3%</text>
+  </g>
+  <text x="240" y="270" font-family="system-ui, sans-serif" font-size="20" fill="#cfd6e4" text-anchor="middle">
+    Preview placeholder — Donut mode
+  </text>
+  <text x="240" y="295" font-family="system-ui, sans-serif" font-size="13" fill="#6b7280" text-anchor="middle">
+    Replace with a real screenshot once implemented
+  </text>
+</svg>
