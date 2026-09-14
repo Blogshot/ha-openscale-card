@@ -23,7 +23,7 @@ const GENDER_OPTIONS = [
 const DISPLAY_MODE_OPTIONS = [
   { value: 'grid', label: 'Grid' },
   { value: 'callouts', label: 'Callouts' },
-  { value: 'donut', label: 'Donut (needs body fat % and water %)' },
+  { value: 'donut', label: 'Donut (needs body fat %, water % and muscle mass %)' },
 ];
 
 const ACTIVITY_LEVEL_OPTIONS = Object.keys(ACTIVITY_FACTORS).map((value) => ({

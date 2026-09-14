@@ -54,22 +54,30 @@ describe('computeTdee', () => {
 });
 
 describe('computeDonutSegments', () => {
-  it('folds the remainder into "other" when bone % is unknown', () => {
-    const segments = computeDonutSegments(54.9, 17.7);
-    expect(segments.water).toBe(54.9);
-    expect(segments.fat).toBe(17.7);
+  it('shows the raw percentages plus a leftover "other" when they sum under 100%', () => {
+    const segments = computeDonutSegments(40, 20, 15);
+    expect(segments.water).toBe(40);
+    expect(segments.muscle).toBe(20);
+    expect(segments.fat).toBe(15);
     expect(segments.bone).toBe(0);
-    expect(segments.other).toBeCloseTo(27.4, 5);
+    expect(segments.other).toBeCloseTo(25, 5);
   });
 
   it('accounts for bone % when it is known', () => {
-    const segments = computeDonutSegments(54.9, 17.7, 3);
+    const segments = computeDonutSegments(40, 20, 15, 3);
     expect(segments.bone).toBe(3);
-    expect(segments.other).toBeCloseTo(24.4, 5);
+    expect(segments.other).toBeCloseTo(22, 5);
   });
 
-  it('clamps "other" at zero if the known segments already reach 100%', () => {
-    const segments = computeDonutSegments(60, 45);
+  it('scales water/muscle/fat/bone down proportionally when they overlap past 100%', () => {
+    // openScale's water % and muscle % both include muscle tissue's own
+    // water content, so real readings commonly sum past 100% on their own.
+    const segments = computeDonutSegments(54.9, 41.5, 17.7);
+    const rawSum = 54.9 + 41.5 + 17.7;
+    expect(segments.water).toBeCloseTo((54.9 / rawSum) * 100, 5);
+    expect(segments.muscle).toBeCloseTo((41.5 / rawSum) * 100, 5);
+    expect(segments.fat).toBeCloseTo((17.7 / rawSum) * 100, 5);
     expect(segments.other).toBe(0);
+    expect(segments.water + segments.muscle + segments.fat).toBeCloseTo(100, 5);
   });
 });

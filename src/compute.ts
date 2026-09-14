@@ -42,28 +42,38 @@ export function computeTdee(bmrKcal: number, activityLevel: ActivityLevel): numb
 }
 
 export interface DonutSegments {
-  /** Total body water, % of body weight. */
   water: number;
-  /** Fat mass, % of body weight. */
+  muscle: number;
   fat: number;
-  /** Bone mass, % of body weight — 0 when not separately known. */
+  /** 0 when bone mass isn't separately known. */
   bone: number;
   /**
-   * Everything else that makes up lean mass (muscle protein, organs, ...),
-   * % of body weight. Not a measured value — it is what's left once water,
-   * fat and (if known) bone are accounted for, clamped so the four segments
-   * never exceed 100%.
+   * Whatever's left once water, muscle, fat and (if known) bone are
+   * accounted for. Only ever non-zero when those four don't already reach
+   * 100% on their own (see the overlap note below) — otherwise 0.
    */
   other: number;
 }
 
 /**
- * Splits body weight into water/fat/bone/other percentages that sum to
- * 100%, for the donut display mode. `bonePct` is optional since
- * openScale-sync doesn't publish it — omit it to fold bone mass into
- * `other` instead of showing it as its own segment.
+ * Splits body weight into water/muscle/fat/bone/other percentages that sum
+ * to exactly 100%, for the donut display mode.
+ *
+ * openScale-sync's water %, muscle % and body fat % are not mutually
+ * exclusive compartments — muscle tissue's own water content is counted in
+ * both the water and muscle readings — so their sum routinely exceeds 100%
+ * (e.g. 54.9 + 41.5 + 17.7 = 114.1). Rather than silently drop or cap one
+ * reading, this scales all of them down proportionally whenever their sum
+ * (plus bone, if known) is over 100%, preserving their relative sizes; when
+ * the sum is under 100% instead, the gap is shown as `other`. `bonePct` is
+ * optional since openScale-sync doesn't publish it — omit it to fold bone
+ * mass into the water/muscle/fat scaling instead of showing it separately.
  */
-export function computeDonutSegments(waterPct: number, fatPct: number, bonePct = 0): DonutSegments {
-  const other = Math.max(0, 100 - waterPct - fatPct - bonePct);
-  return { water: waterPct, fat: fatPct, bone: bonePct, other };
+export function computeDonutSegments(waterPct: number, musclePct: number, fatPct: number, bonePct = 0): DonutSegments {
+  const rawSum = waterPct + musclePct + fatPct + bonePct;
+  if (rawSum <= 100) {
+    return { water: waterPct, muscle: musclePct, fat: fatPct, bone: bonePct, other: 100 - rawSum };
+  }
+  const scale = 100 / rawSum;
+  return { water: waterPct * scale, muscle: musclePct * scale, fat: fatPct * scale, bone: bonePct * scale, other: 0 };
 }

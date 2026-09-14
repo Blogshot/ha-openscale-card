@@ -40,7 +40,11 @@ export function bodyShape(gender: Gender): BodyShape {
       // distinctly narrow waist, then hips flaring out wider than the
       // shoulders — the hourglass taper. Bottom edge (the hip line) is a
       // flat 80–140 span that the legs below attach to exactly.
-      torso: 'M86 52 Q90 42 110 42 Q130 42 134 52 Q126 74 124 94 Q133 110 140 122 L80 122 Q87 110 96 94 Q94 74 86 52 Z',
+      // The waist→hip curve's control point stays close to the waist's own
+      // x rather than jumping straight toward the hip — matching the
+      // curve's incoming direction at the waist so the two curves meet
+      // smoothly there instead of visibly kinking at the narrowest point.
+      torso: 'M86 52 Q90 42 110 42 Q130 42 134 52 Q126 74 124 94 Q122 108 140 122 L80 122 Q98 108 96 94 Q94 74 86 52 Z',
       armLeft: 'M86 58 Q73 76 60 98 Q65 104 70 107 Q82 89 92 72 Q89 65 86 58 Z',
       armRight: 'M134 58 Q147 76 160 98 Q155 104 150 107 Q138 89 128 72 Q131 65 134 58 Z',
       // Each leg's top edge is the straight segment "L<inner> 122", flush

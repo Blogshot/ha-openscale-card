@@ -77,7 +77,7 @@ Every entry under `metrics` is optional — metrics without an entry are simply 
 
 - **`grid`** — a small silhouette next to a plain value list. Works with any combination of metrics.
 - **`callouts`** — a larger silhouette with pointer lines to the values, alternating left/right. Works with any combination of metrics.
-- **`donut`** — a 100% ring around the silhouette showing the body-composition breakdown (water / fat / other lean mass, plus bone if you have a `bone_mass` entity in `%` or `kg`). Requires `water` and `body_fat` to be configured; falls back to `grid` otherwise. Any other configured metrics (weight, BMI, BMR, TDEE, ...) are listed below the ring.
+- **`donut`** — a 100% ring around the silhouette showing the body-composition breakdown (water / muscle / fat, plus bone if you have a `bone_mass` entity in `%` or `kg`, plus a leftover "other" segment where needed), with a callout line from each segment to its value around the ring. Requires `water`, `body_fat` and `muscle_mass` to be configured; falls back to `grid` otherwise. openScale-sync's water/muscle/fat readings overlap physiologically (muscle's own water content is counted in both), so whenever they'd add up past 100% on their own, all of them are scaled down proportionally to fit — see the `computeDonutSegments` comment in `src/compute.ts` for the reasoning. Any other configured metrics (weight, BMI, BMR, TDEE, ...) are listed below the ring.
 
 ### Trend arrows
 
