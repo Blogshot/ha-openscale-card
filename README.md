@@ -16,7 +16,7 @@ A [Home Assistant](https://www.home-assistant.io/) Lovelace card that visualizes
 
 ## Requirements
 
-- Home Assistant sensor entities created via openScale-sync's MQTT discovery (weight, BMI, body fat, water, muscle mass, bone mass, ...).
+- Home Assistant sensor entities created via openScale-sync's MQTT discovery. openScale-sync only publishes four raw measurements — **weight, body fat %, muscle %, total body water %** — everything else the card shows (BMI, lean body mass, fat/muscle/water mass in kg, BMR, TDEE) is derived from those four, see [Configuration](#configuration).
 
 ## Installation
 
@@ -36,24 +36,36 @@ Download `openscale-card.js` from this repository and register it as a Lovelace 
 ```yaml
 type: custom:openscale-card
 title: My Body Data
-gender: female
-display_mode: grid
+gender: female              # male | female — used for the silhouette
+display_mode: grid          # callouts | grid | donut (only "grid" is implemented so far)
+
+height_cm: 170               # only needed to derive BMI
+activity_level: moderate     # sedentary | light | moderate | active | very_active — only needed to derive TDEE
+
 metrics:
+  # The four raw measurements openScale-sync actually publishes via MQTT:
   weight:
     entity: sensor.openscale_weight
-  bmi:
-    entity: sensor.openscale_bmi
   body_fat:
     entity: sensor.openscale_body_fat
-  water:
-    entity: sensor.openscale_water
   muscle_mass:
     entity: sensor.openscale_muscle_mass
-  bone_mass:
-    entity: sensor.openscale_bone_mass
+  water:
+    entity: sensor.openscale_water
+
+  # Derived metrics — omit "entity", an empty {} enables them:
+  bmi: {}             # weight / (height_cm / 100)²
+  lbm: {}              # weight × (1 − body_fat%)          — lean body mass
+  fat_mass: {}         # weight × body_fat%                 (kg)
+  muscle_mass_kg: {}   # weight × muscle_mass%              (kg)
+  water_mass_kg: {}    # weight × water%                    (kg)
+  bmr: {}              # Katch-McArdle formula from lbm
+  tdee: {}             # bmr × activity_level factor
 ```
 
-Every entry under `metrics` is optional — metrics without an assigned entity are simply left out. `display_mode` will support `callouts`, `grid` and `donut` (see previews above); only a plain fallback list is rendered in this release.
+Every entry under `metrics` is optional — metrics without an entry are simply left out. A metric with `entity` set uses that entity's state; a metric listed with an empty `{}` is instead computed from the other configured metrics (and `height_cm` / `activity_level` where needed) — if the values it needs aren't available, the row is just omitted. `bone_mass`, `visceral_fat`, `waist` and `hip` are supported too, but openScale-sync doesn't publish them, so they only work if sourced from elsewhere.
+
+`display_mode` will support `callouts`, `grid` and `donut` (see previews above); only a plain fallback list is rendered in this release.
 
 ## Development
 

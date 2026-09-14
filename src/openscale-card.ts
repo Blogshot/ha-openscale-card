@@ -1,5 +1,20 @@
 import { LitElement, html, css } from 'lit';
-import { METRIC_LABELS, MetricKey, OpenscaleCardConfig } from './types';
+import {
+  computeBmi,
+  computeBmr,
+  computeFatMass,
+  computeLbm,
+  computeMuscleMassKg,
+  computeTdee,
+  computeWaterMassKg,
+} from './compute';
+import {
+  COMPUTED_METRIC_DECIMALS,
+  COMPUTED_METRIC_UNITS,
+  METRIC_LABELS,
+  MetricKey,
+  OpenscaleCardConfig,
+} from './types';
 
 interface HassEntity {
   state: string;
@@ -10,13 +25,80 @@ interface HomeAssistant {
   states: Record<string, HassEntity>;
 }
 
+type Metrics = OpenscaleCardConfig['metrics'];
+
+function readNumber(hassObj: HomeAssistant, metrics: Metrics, key: MetricKey): number | undefined {
+  const entityId = metrics[key]?.entity;
+  if (!entityId) {
+    return undefined;
+  }
+  const entity = hassObj.states[entityId];
+  if (!entity) {
+    return undefined;
+  }
+  const value = parseFloat(entity.state);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+/**
+ * Resolves a metric that has no configured entity by deriving it from other
+ * configured metrics. Returns undefined when the inputs it needs aren't
+ * available, in which case the row is simply omitted.
+ */
+function resolveComputedValue(
+  key: MetricKey,
+  hassObj: HomeAssistant,
+  metrics: Metrics,
+  config: OpenscaleCardConfig,
+): number | undefined {
+  const weight = readNumber(hassObj, metrics, 'weight');
+  const bodyFat = readNumber(hassObj, metrics, 'body_fat');
+  const lbm = weight !== undefined && bodyFat !== undefined ? computeLbm(weight, bodyFat) : undefined;
+
+  switch (key) {
+    case 'fat_mass':
+      return weight !== undefined && bodyFat !== undefined
+        ? computeFatMass(weight, bodyFat)
+        : undefined;
+    case 'muscle_mass_kg': {
+      const muscle = readNumber(hassObj, metrics, 'muscle_mass');
+      return weight !== undefined && muscle !== undefined
+        ? computeMuscleMassKg(weight, muscle)
+        : undefined;
+    }
+    case 'water_mass_kg': {
+      const water = readNumber(hassObj, metrics, 'water');
+      return weight !== undefined && water !== undefined
+        ? computeWaterMassKg(weight, water)
+        : undefined;
+    }
+    case 'lbm':
+      return lbm;
+    case 'bmi':
+      return weight !== undefined && config.height_cm
+        ? computeBmi(weight, config.height_cm)
+        : undefined;
+    case 'bmr':
+      return lbm !== undefined ? computeBmr(lbm) : undefined;
+    case 'tdee': {
+      const bmr = lbm !== undefined ? computeBmr(lbm) : undefined;
+      return bmr !== undefined && config.activity_level
+        ? computeTdee(bmr, config.activity_level)
+        : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
 /**
  * OpenscaleCard
  *
  * Minimal fallback implementation: reads the entities configured under
- * `metrics` and renders them as a plain list. The schematic body-silhouette
- * visualizations (callouts / grid / donut display modes) are not implemented
- * yet and will replace this fallback view.
+ * `metrics` (or derives them, see compute.ts) and renders them as a plain
+ * list. The schematic body-silhouette visualizations (callouts / grid /
+ * donut display modes) are not implemented yet and will replace this
+ * fallback view.
  */
 export class OpenscaleCard extends LitElement {
   private hassObj?: HomeAssistant;
@@ -72,28 +154,45 @@ export class OpenscaleCard extends LitElement {
     if (!this.config || !this.hassObj) {
       return html``;
     }
+    const config = this.config;
+    const hassObj = this.hassObj;
 
-    const entries = Object.entries(this.config.metrics) as [
-      MetricKey,
-      { entity: string } | undefined,
-    ][];
+    const entries = Object.entries(config.metrics) as [MetricKey, { entity?: string } | undefined][];
 
     const rows = entries
-      .filter((entry): entry is [MetricKey, { entity: string }] => !!entry[1]?.entity)
       .map(([key, metric]) => {
-        const entity = this.hassObj!.states[metric.entity];
-        const value = entity ? entity.state : 'unavailable';
-        const unit = (entity?.attributes?.unit_of_measurement as string | undefined) ?? '';
+        if (!metric) {
+          return null;
+        }
+
+        let displayValue: string;
+        let unit: string;
+
+        if (metric.entity) {
+          const entity = hassObj.states[metric.entity];
+          displayValue = entity ? entity.state : 'unavailable';
+          unit = (entity?.attributes?.unit_of_measurement as string | undefined) ?? '';
+        } else {
+          const computed = resolveComputedValue(key, hassObj, config.metrics, config);
+          if (computed === undefined) {
+            return null;
+          }
+          const decimals = COMPUTED_METRIC_DECIMALS[key] ?? 1;
+          displayValue = computed.toFixed(decimals);
+          unit = COMPUTED_METRIC_UNITS[key] ?? '';
+        }
+
         return html`
           <div class="row">
             <span class="label">${METRIC_LABELS[key]}</span>
-            <span class="value">${value} ${unit}</span>
+            <span class="value">${displayValue} ${unit}</span>
           </div>
         `;
-      });
+      })
+      .filter((row) => row !== null);
 
     return html`
-      <ha-card .header=${this.config.title ?? 'OpenScale'}>
+      <ha-card .header=${config.title ?? 'OpenScale'}>
         <div class="content">
           <p class="notice">
             Body silhouette visualization is not implemented yet in this early
