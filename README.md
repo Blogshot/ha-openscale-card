@@ -14,7 +14,7 @@ Same example data (weight, body fat %, muscle %, water %) shown in each of the t
 | :---: | :---: | :---: |
 | ![Grid mode preview](docs/screenshots/preview-grid.png) | ![Callouts mode preview](docs/screenshots/preview-callouts.png) | ![Donut mode preview](docs/screenshots/preview-donut.png) |
 
-The silhouette is a simple, stylized outline (not anatomically precise) — openScale-sync's measurements are whole-body, not per-limb, so nothing in `callouts` mode implies a value belongs to a specific body part; the lines are purely a layout device. Male/female only differ in the shoulder/waist/hip proportions (broad shoulders and narrow hips vs. a defined waist and wider hips), which is what actually reads as male/female at this size.
+The silhouette is a simple, faceted low-poly figure (not anatomically precise) — openScale-sync's measurements are whole-body, not per-limb, so nothing in `callouts` mode implies a value belongs to a specific body part; the lines are purely a layout device. Male/female only differ in the shoulder/waist/hip proportions (broad shoulders and narrow hips vs. a defined waist and wider hips), which is what actually reads as male/female at this size.
 
 Acronym values (BMI, BMR, TDEE, LBM) show a small ⓘ next to the label — hover it for what the acronym stands for.
 
