@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeBmi,
   computeBmr,
+  computeDonutSegments,
   computeFatMass,
   computeLbm,
   computeMuscleMassKg,
@@ -49,5 +50,26 @@ describe('computeTdee', () => {
   it('scales BMR by the activity factor', () => {
     expect(computeTdee(1700, 'sedentary')).toBeCloseTo(2040, 5);
     expect(computeTdee(1700, 'moderate')).toBeCloseTo(2635, 5);
+  });
+});
+
+describe('computeDonutSegments', () => {
+  it('folds the remainder into "other" when bone % is unknown', () => {
+    const segments = computeDonutSegments(54.9, 17.7);
+    expect(segments.water).toBe(54.9);
+    expect(segments.fat).toBe(17.7);
+    expect(segments.bone).toBe(0);
+    expect(segments.other).toBeCloseTo(27.4, 5);
+  });
+
+  it('accounts for bone % when it is known', () => {
+    const segments = computeDonutSegments(54.9, 17.7, 3);
+    expect(segments.bone).toBe(3);
+    expect(segments.other).toBeCloseTo(24.4, 5);
+  });
+
+  it('clamps "other" at zero if the known segments already reach 100%', () => {
+    const segments = computeDonutSegments(60, 45);
+    expect(segments.other).toBe(0);
   });
 });

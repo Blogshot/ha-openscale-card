@@ -4,7 +4,7 @@ A [Home Assistant](https://www.home-assistant.io/) Lovelace card that visualizes
 
 ## Status
 
-🚧 Early work in progress. This first release ships a minimal fallback view (a plain metric list); the schematic body-silhouette visualizations shown in the previews below are still in development.
+🚧 Work in progress, but functional: all three display modes are implemented. The screenshots below are still placeholders — replace them with real captures once you've got the card running.
 
 ## Preview
 
@@ -12,7 +12,7 @@ A [Home Assistant](https://www.home-assistant.io/) Lovelace card that visualizes
 | :---: | :---: | :---: |
 | ![Callouts mode preview](docs/screenshots/preview-callouts.svg) | ![Grid mode preview](docs/screenshots/preview-grid.svg) | ![Donut mode preview](docs/screenshots/preview-donut.svg) |
 
-> The images above are placeholders — replace them with real screenshots once the corresponding display mode is implemented.
+The silhouette is a simple, stylized outline (not anatomically precise) — openScale-sync's measurements are whole-body, not per-limb, so nothing in `callouts` mode implies a value belongs to a specific body part; the lines are purely a layout device.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ The card has a visual configuration UI: add it via the dashboard's card picker (
 type: custom:openscale-card
 title: My Body Data
 gender: female              # male | female — used for the silhouette
-display_mode: grid          # callouts | grid | donut (only "grid" is implemented so far)
+display_mode: grid          # callouts | grid | donut
 
 height_cm: 170               # only needed to derive BMI
 activity_level: moderate     # sedentary | light | moderate | active | very_active — only needed to derive TDEE
@@ -67,9 +67,17 @@ metrics:
   tdee: {}             # bmr × activity_level factor
 ```
 
-Every entry under `metrics` is optional — metrics without an entry are simply left out. A metric with `entity` set uses that entity's state; a metric listed with an empty `{}` is instead computed from the other configured metrics (and `height_cm` / `activity_level` where needed) — if the values it needs aren't available, the row is just omitted. `bone_mass`, `visceral_fat`, `waist` and `hip` are supported too, but openScale-sync doesn't publish them, so they only work if sourced from elsewhere.
+Every entry under `metrics` is optional — metrics without an entry are simply left out. A metric with `entity` set uses that entity's state; a metric listed with an empty `{}` is instead computed from the other configured metrics (and `height_cm` / `activity_level` where needed) — if the values it needs aren't available, the row is just omitted (this includes an `entity` whose state is currently `unavailable`/`unknown`). `bone_mass`, `visceral_fat`, `waist` and `hip` are supported too, but openScale-sync doesn't publish them, so they only work if sourced from elsewhere.
 
-`display_mode` will support `callouts`, `grid` and `donut` (see previews above); only a plain fallback list is rendered in this release.
+### Display modes
+
+- **`grid`** — a small silhouette next to a plain value list. Works with any combination of metrics.
+- **`callouts`** — a larger silhouette with pointer lines to the values, alternating left/right. Works with any combination of metrics.
+- **`donut`** — a 100% ring around the silhouette showing the body-composition breakdown (water / fat / other lean mass, plus bone if you have a `bone_mass` entity in `%` or `kg`). Requires `water` and `body_fat` to be configured; falls back to `grid` otherwise. Any other configured metrics (weight, BMI, BMR, TDEE, ...) are listed below the ring.
+
+### Trend arrows
+
+Every value shows a small ↑/↓/→ arrow once the card has seen at least two different readings for it, comparing the current value to the previous one. This comparison only lives in the browser tab's memory — it resets when the card is re-added, the dashboard is reloaded, or Home Assistant restarts, so the very first render after any of those never shows an arrow yet.
 
 ## Development
 

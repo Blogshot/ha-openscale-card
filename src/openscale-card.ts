@@ -1,118 +1,29 @@
 import { LitElement, html, css } from 'lit';
 import './openscale-card-editor';
-import {
-  computeBmi,
-  computeBmr,
-  computeFatMass,
-  computeLbm,
-  computeMuscleMassKg,
-  computeTdee,
-  computeWaterMassKg,
-} from './compute';
-import {
-  COMPUTED_METRIC_DECIMALS,
-  COMPUTED_METRIC_UNITS,
-  METRIC_LABELS,
-  MetricKey,
-  OpenscaleCardConfig,
-} from './types';
-
-interface HassEntity {
-  state: string;
-  attributes: Record<string, unknown>;
-}
-
-interface HomeAssistant {
-  states: Record<string, HassEntity>;
-}
-
-type Metrics = OpenscaleCardConfig['metrics'];
-
-function readNumber(hassObj: HomeAssistant, metrics: Metrics, key: MetricKey): number | undefined {
-  const entityId = metrics[key]?.entity;
-  if (!entityId) {
-    return undefined;
-  }
-  const entity = hassObj.states[entityId];
-  if (!entity) {
-    return undefined;
-  }
-  const value = parseFloat(entity.state);
-  return Number.isFinite(value) ? value : undefined;
-}
-
-/**
- * Resolves a metric that has no configured entity by deriving it from other
- * configured metrics. Returns undefined when the inputs it needs aren't
- * available, in which case the row is simply omitted.
- */
-function resolveComputedValue(
-  key: MetricKey,
-  hassObj: HomeAssistant,
-  metrics: Metrics,
-  config: OpenscaleCardConfig,
-): number | undefined {
-  const weight = readNumber(hassObj, metrics, 'weight');
-  const bodyFat = readNumber(hassObj, metrics, 'body_fat');
-  const lbm = weight !== undefined && bodyFat !== undefined ? computeLbm(weight, bodyFat) : undefined;
-
-  switch (key) {
-    case 'fat_mass':
-      return weight !== undefined && bodyFat !== undefined
-        ? computeFatMass(weight, bodyFat)
-        : undefined;
-    case 'muscle_mass_kg': {
-      const muscle = readNumber(hassObj, metrics, 'muscle_mass');
-      return weight !== undefined && muscle !== undefined
-        ? computeMuscleMassKg(weight, muscle)
-        : undefined;
-    }
-    case 'water_mass_kg': {
-      const water = readNumber(hassObj, metrics, 'water');
-      return weight !== undefined && water !== undefined
-        ? computeWaterMassKg(weight, water)
-        : undefined;
-    }
-    case 'lbm':
-      return lbm;
-    case 'bmi':
-      return weight !== undefined && config.height_cm
-        ? computeBmi(weight, config.height_cm)
-        : undefined;
-    case 'bmr':
-      return lbm !== undefined ? computeBmr(lbm) : undefined;
-    case 'tdee': {
-      const bmr = lbm !== undefined ? computeBmr(lbm) : undefined;
-      return bmr !== undefined && config.activity_level
-        ? computeTdee(bmr, config.activity_level)
-        : undefined;
-    }
-    default:
-      return undefined;
-  }
-}
+import { HomeAssistant, resolveMetricRows } from './metrics-resolver';
+import { canRenderDonut, renderDonut } from './modes/donut';
+import { renderCallouts } from './modes/callouts';
+import { renderGrid } from './modes/grid';
+import { TrendTracker } from './trend';
+import { OpenscaleCardConfig } from './types';
 
 /**
  * OpenscaleCard
  *
- * Minimal fallback implementation: reads the entities configured under
- * `metrics` (or derives them, see compute.ts) and renders them as a plain
- * list. The schematic body-silhouette visualizations (callouts / grid /
- * donut display modes) are not implemented yet and will replace this
- * fallback view.
+ * Reads the entities configured under `metrics` (or derives them, see
+ * compute.ts / metrics-resolver.ts) and renders them as a schematic body
+ * silhouette in one of three display modes: `grid` (silhouette + value
+ * list), `callouts` (silhouette with pointer lines to values) or `donut`
+ * (a 100% body-composition ring around the silhouette).
  */
 export class OpenscaleCard extends LitElement {
   private hassObj?: HomeAssistant;
   private config?: OpenscaleCardConfig;
+  private readonly trendTracker = new TrendTracker();
 
   static styles = css`
     .content {
       padding: 16px;
-    }
-    .notice {
-      margin: 0 0 12px;
-      font-size: 0.85em;
-      opacity: 0.7;
     }
     .row {
       display: flex;
@@ -128,6 +39,92 @@ export class OpenscaleCard extends LitElement {
     }
     .value {
       font-weight: 600;
+    }
+    .trend {
+      margin-left: 4px;
+      font-weight: 400;
+    }
+    .trend-up {
+      color: var(--error-color, #db4437);
+    }
+    .trend-down {
+      color: var(--success-color, #43a047);
+    }
+    .trend-flat {
+      color: var(--secondary-text-color, #888);
+    }
+
+    /* Grid mode */
+    .grid-mode {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .grid-silhouette {
+      width: 90px;
+      height: auto;
+      flex-shrink: 0;
+    }
+    .grid-rows {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Callouts mode */
+    .callouts-mode {
+      width: 100%;
+      height: auto;
+    }
+    .callout-line {
+      stroke: var(--divider-color, #bbb);
+      stroke-width: 1;
+    }
+    .callout-label {
+      font-size: 11px;
+      fill: var(--secondary-text-color, #888);
+    }
+    .callout-value {
+      font-size: 13px;
+      font-weight: 600;
+      fill: var(--primary-text-color, #222);
+    }
+
+    /* Donut mode */
+    .donut-mode {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .donut-ring {
+      width: 160px;
+      height: 160px;
+    }
+    .donut-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px 14px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--secondary-text-color, #888);
+    }
+    .legend-row .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-row .value {
+      color: var(--primary-text-color, #222);
+    }
+    .donut-extra {
+      width: 100%;
+      margin-top: 8px;
     }
   `;
 
@@ -148,7 +145,14 @@ export class OpenscaleCard extends LitElement {
   }
 
   getCardSize(): number {
-    return 4;
+    switch (this.config?.display_mode) {
+      case 'callouts':
+        return 6;
+      case 'donut':
+        return 6;
+      default:
+        return 4;
+    }
   }
 
   static getConfigElement(): HTMLElement {
@@ -174,51 +178,20 @@ export class OpenscaleCard extends LitElement {
       return html``;
     }
     const config = this.config;
-    const hassObj = this.hassObj;
+    const gender = config.gender ?? 'male';
+    const rows = resolveMetricRows(this.hassObj, config, this.trendTracker);
 
-    const entries = Object.entries(config.metrics) as [MetricKey, { entity?: string } | undefined][];
-
-    const rows = entries
-      .map(([key, metric]) => {
-        if (!metric) {
-          return null;
-        }
-
-        let displayValue: string;
-        let unit: string;
-
-        if (metric.entity) {
-          const entity = hassObj.states[metric.entity];
-          displayValue = entity ? entity.state : 'unavailable';
-          unit = (entity?.attributes?.unit_of_measurement as string | undefined) ?? '';
-        } else {
-          const computed = resolveComputedValue(key, hassObj, config.metrics, config);
-          if (computed === undefined) {
-            return null;
-          }
-          const decimals = COMPUTED_METRIC_DECIMALS[key] ?? 1;
-          displayValue = computed.toFixed(decimals);
-          unit = COMPUTED_METRIC_UNITS[key] ?? '';
-        }
-
-        return html`
-          <div class="row">
-            <span class="label">${METRIC_LABELS[key]}</span>
-            <span class="value">${displayValue} ${unit}</span>
-          </div>
-        `;
-      })
-      .filter((row) => row !== null);
+    const mode = config.display_mode ?? 'grid';
+    const body =
+      mode === 'donut' && canRenderDonut(rows)
+        ? renderDonut(rows, gender)
+        : mode === 'callouts'
+          ? renderCallouts(rows, gender)
+          : renderGrid(rows, gender);
 
     return html`
       <ha-card .header=${config.title ?? 'OpenScale'}>
-        <div class="content">
-          <p class="notice">
-            Body silhouette visualization is not implemented yet in this early
-            version — showing raw metric values instead.
-          </p>
-          ${rows}
-        </div>
+        <div class="content">${body}</div>
       </ha-card>
     `;
   }

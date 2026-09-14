@@ -40,3 +40,30 @@ export function computeBmr(lbmKg: number): number {
 export function computeTdee(bmrKcal: number, activityLevel: ActivityLevel): number {
   return bmrKcal * ACTIVITY_FACTORS[activityLevel];
 }
+
+export interface DonutSegments {
+  /** Total body water, % of body weight. */
+  water: number;
+  /** Fat mass, % of body weight. */
+  fat: number;
+  /** Bone mass, % of body weight — 0 when not separately known. */
+  bone: number;
+  /**
+   * Everything else that makes up lean mass (muscle protein, organs, ...),
+   * % of body weight. Not a measured value — it is what's left once water,
+   * fat and (if known) bone are accounted for, clamped so the four segments
+   * never exceed 100%.
+   */
+  other: number;
+}
+
+/**
+ * Splits body weight into water/fat/bone/other percentages that sum to
+ * 100%, for the donut display mode. `bonePct` is optional since
+ * openScale-sync doesn't publish it — omit it to fold bone mass into
+ * `other` instead of showing it as its own segment.
+ */
+export function computeDonutSegments(waterPct: number, fatPct: number, bonePct = 0): DonutSegments {
+  const other = Math.max(0, 100 - waterPct - fatPct - bonePct);
+  return { water: waterPct, fat: fatPct, bone: bonePct, other };
+}
