@@ -25,7 +25,10 @@ const TOP_MARGIN = 40;
 interface Segment {
   key: 'water' | 'muscle' | 'fat' | 'bone' | 'other';
   label: string;
+  /** The actual sensor reading — always what's printed, so it matches every other display mode. */
   pct: number;
+  /** Share of the ring's 360°. Only differs from `pct` when water/muscle/fat/bone overlap past 100% and get scaled down so the arcs still add up to a full circle. */
+  arcPct: number;
   color: string;
   trend?: TrendDirection;
 }
@@ -75,13 +78,13 @@ function ringSegments(rows: ResolvedMetric[]): Segment[] {
   const s = computeDonutSegments(waterRow.value, muscleRow.value, fatRow.value, bonePct);
 
   const segments: Segment[] = [
-    { key: 'water', label: 'Water', pct: s.water, color: SEGMENT_COLORS.water, trend: waterRow.trend },
-    { key: 'muscle', label: 'Muscle', pct: s.muscle, color: SEGMENT_COLORS.muscle, trend: muscleRow.trend },
-    { key: 'fat', label: 'Fat', pct: s.fat, color: SEGMENT_COLORS.fat, trend: fatRow.trend },
-    { key: 'bone', label: 'Bone', pct: s.bone, color: SEGMENT_COLORS.bone, trend: boneRow?.trend },
-    { key: 'other', label: 'Other', pct: s.other, color: SEGMENT_COLORS.other },
+    { key: 'water', label: 'Water', pct: waterRow.value, arcPct: s.water, color: SEGMENT_COLORS.water, trend: waterRow.trend },
+    { key: 'muscle', label: 'Muscle', pct: muscleRow.value, arcPct: s.muscle, color: SEGMENT_COLORS.muscle, trend: muscleRow.trend },
+    { key: 'fat', label: 'Fat', pct: fatRow.value, arcPct: s.fat, color: SEGMENT_COLORS.fat, trend: fatRow.trend },
+    { key: 'bone', label: 'Bone', pct: bonePct, arcPct: s.bone, color: SEGMENT_COLORS.bone, trend: boneRow?.trend },
+    { key: 'other', label: 'Other', pct: s.other, arcPct: s.other, color: SEGMENT_COLORS.other },
   ];
-  return segments.filter((segment) => segment.pct > 0.05);
+  return segments.filter((segment) => segment.arcPct > 0.05);
 }
 
 /** Point on a circle centered at (CENTER_X, CENTER_Y); 0° is straight up, increasing clockwise. */
@@ -96,7 +99,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
 
   let offset = 0;
   const withAngles = segments.map((segment) => {
-    const fraction = segment.pct / 100;
+    const fraction = segment.arcPct / 100;
     const length = Math.max(0, fraction * CIRCUMFERENCE - GAP);
     const dashoffset = -offset;
     const midAngle = ((offset / CIRCUMFERENCE) * 360 + fraction * 180) % 360;
