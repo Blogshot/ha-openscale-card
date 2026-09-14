@@ -31,6 +31,10 @@ A [Home Assistant](https://www.home-assistant.io/) Lovelace card that visualizes
 
 Download `openscale-card.js` from this repository and register it as a Lovelace resource (Settings → Dashboards → Resources).
 
+## Visual editor
+
+The card has a visual configuration UI: add it via the dashboard's card picker (or edit an existing card) and use **Edit** instead of switching to YAML. It's split into three sections — general settings, entity pickers for the four raw openScale-sync sensors (plus optional bone mass/visceral fat/waist/hip if you have them from elsewhere), and on/off toggles for the computed metrics (BMI, lean body mass, fat/muscle/water mass in kg, BMR, TDEE). YAML mode works exactly the same, see below.
+
 ## Configuration
 
 ```yaml

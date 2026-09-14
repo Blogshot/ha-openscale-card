@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import './openscale-card-editor';
 import {
   computeBmi,
   computeBmr,
@@ -148,6 +149,24 @@ export class OpenscaleCard extends LitElement {
 
   getCardSize(): number {
     return 4;
+  }
+
+  static getConfigElement(): HTMLElement {
+    return document.createElement('openscale-card-editor');
+  }
+
+  static getStubConfig(): OpenscaleCardConfig {
+    return {
+      type: 'custom:openscale-card',
+      gender: 'male',
+      display_mode: 'grid',
+      metrics: {
+        weight: {},
+        body_fat: {},
+        muscle_mass: {},
+        water: {},
+      },
+    };
   }
 
   protected render() {
