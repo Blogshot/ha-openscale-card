@@ -3,6 +3,7 @@ import { computeDonutSegments } from '../compute';
 import { Gender } from '../types';
 import { ResolvedMetric } from '../metrics-resolver';
 import { renderSilhouette } from '../silhouette';
+import { renderHintIcon } from './hint';
 import { renderTrendArrow } from './trend-arrow';
 
 const RADIUS = 82;
@@ -112,7 +113,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
               ${extraRows.map(
                 (row) => html`
                   <div class="row">
-                    <span class="label">${row.label}</span>
+                    <span class="label">${row.label}${renderHintIcon(row.hint)}</span>
                     <span class="value">${row.formatted} ${row.unit} ${renderTrendArrow(row.trend)}</span>
                   </div>
                 `,

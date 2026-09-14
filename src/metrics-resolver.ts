@@ -7,7 +7,7 @@ import {
   computeTdee,
   computeWaterMassKg,
 } from './compute';
-import { COMPUTED_METRIC_DECIMALS, COMPUTED_METRIC_UNITS, METRIC_LABELS, MetricKey, OpenscaleCardConfig } from './types';
+import { COMPUTED_METRIC_DECIMALS, COMPUTED_METRIC_UNITS, METRIC_HINTS, METRIC_LABELS, MetricKey, OpenscaleCardConfig } from './types';
 import { TrendDirection, TrendTracker } from './trend';
 
 export interface HassEntity {
@@ -30,6 +30,8 @@ export interface ResolvedMetric {
   formatted: string;
   unit: string;
   trend?: TrendDirection;
+  /** Shown as a hover hint — explains acronyms like BMR/TDEE/BMI/LBM. */
+  hint?: string;
 }
 
 function readNumber(hassObj: HomeAssistant, metrics: Metrics, key: MetricKey): number | undefined {
@@ -145,6 +147,7 @@ export function resolveMetricRows(
       formatted,
       unit,
       trend: tracker.update(key, value),
+      hint: METRIC_HINTS[key],
     });
   }
 

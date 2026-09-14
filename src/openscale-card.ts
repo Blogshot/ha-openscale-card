@@ -37,6 +37,12 @@ export class OpenscaleCard extends LitElement {
     .label {
       color: var(--secondary-text-color, #888);
     }
+    .hint-icon {
+      margin-left: 3px;
+      cursor: help;
+      opacity: 0.65;
+      font-size: 0.85em;
+    }
     .value {
       font-weight: 600;
     }
@@ -82,6 +88,10 @@ export class OpenscaleCard extends LitElement {
     .callout-label {
       font-size: 11px;
       fill: var(--secondary-text-color, #888);
+    }
+    .callout-label.has-hint {
+      text-decoration: underline dotted;
+      cursor: help;
     }
     .callout-value {
       font-size: 13px;

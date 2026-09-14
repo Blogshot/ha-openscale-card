@@ -5,6 +5,12 @@ import { Gender } from './types';
  * Simple, stylized body outline (not anatomically precise) shared by all
  * display modes. All coordinates live in a fixed 220x230 viewBox so callers
  * can position callouts/rings against known anchor points.
+ *
+ * Male and female differ in their shoulder/waist/hip proportions — the
+ * classic "V-taper" (shoulders widest) vs. "hourglass" (hips widest, waist
+ * narrowest) silhouette — which is the one detail that reliably reads as
+ * male/female at pictogram size, the same convention used by most body-scale
+ * apps and public signage.
  */
 export interface BodyShape {
   headCx: number;
@@ -23,24 +29,32 @@ export function bodyShape(gender: Gender): BodyShape {
   if (gender === 'female') {
     return {
       headCx: 110,
-      headCy: 30,
-      headR: 16,
-      torso: 'M92 50 Q110 43 128 50 L134 112 Q110 126 86 112 Z',
-      armLeft: 'M86 60 L60 100 L68 108 L92 70 Z',
-      armRight: 'M134 60 L160 100 L152 108 L128 70 Z',
-      legLeft: 'M92 112 L86 212 L102 212 L108 122 Q99 118 92 112 Z',
-      legRight: 'M128 112 L134 212 L118 212 L112 122 Q121 118 128 112 Z',
+      headCy: 27,
+      headR: 15,
+      // Shoulders narrower than the male shape but still proportionate, a
+      // distinctly narrow waist, then hips flaring out wider than the
+      // shoulders — the hourglass taper.
+      torso: 'M86 50 Q110 42 134 50 L124 94 L140 122 L80 122 L96 94 Z',
+      armLeft: 'M86 56 L60 98 L70 107 L92 72 Z',
+      armRight: 'M134 56 L158 98 L148 107 L128 72 Z',
+      // Legs meet close together under the wider hips, tapering to the feet.
+      legLeft: 'M80 122 L85 216 L100 216 L104 130 Z',
+      legRight: 'M140 122 L135 216 L118 216 L116 130 Z',
     };
   }
   return {
     headCx: 110,
-    headCy: 30,
+    headCy: 27,
     headR: 16,
-    torso: 'M90 50 Q110 42 130 50 L136 112 Q110 124 84 112 Z',
-    armLeft: 'M84 60 L58 100 L66 108 L90 70 Z',
-    armRight: 'M136 60 L162 100 L154 108 L130 70 Z',
-    legLeft: 'M88 112 L82 212 L100 212 L108 124 Z',
-    legRight: 'M132 112 L138 212 L120 212 L112 124 Z',
+    // Broad, squared shoulders narrowing steadily to hips that stay
+    // narrower than the shoulders — the opposite taper from the female
+    // shape.
+    torso: 'M79 52 Q110 41 141 52 L129 94 L134 122 L86 122 L91 94 Z',
+    armLeft: 'M79 58 L50 100 L60 109 L88 72 Z',
+    armRight: 'M141 58 L170 100 L160 109 L132 72 Z',
+    // Legs set further apart under the narrower hips.
+    legLeft: 'M86 122 L80 216 L100 216 L107 128 Z',
+    legRight: 'M134 122 L140 216 L120 216 L113 128 Z',
   };
 }
 

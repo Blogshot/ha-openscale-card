@@ -12,7 +12,9 @@ A [Home Assistant](https://www.home-assistant.io/) Lovelace card that visualizes
 | :---: | :---: | :---: |
 | ![Callouts mode preview](docs/screenshots/preview-callouts.svg) | ![Grid mode preview](docs/screenshots/preview-grid.svg) | ![Donut mode preview](docs/screenshots/preview-donut.svg) |
 
-The silhouette is a simple, stylized outline (not anatomically precise) — openScale-sync's measurements are whole-body, not per-limb, so nothing in `callouts` mode implies a value belongs to a specific body part; the lines are purely a layout device.
+The silhouette is a simple, stylized outline (not anatomically precise) — openScale-sync's measurements are whole-body, not per-limb, so nothing in `callouts` mode implies a value belongs to a specific body part; the lines are purely a layout device. Male/female only differ in the shoulder/waist/hip proportions (broad shoulders and narrow hips vs. a defined waist and wider hips), which is what actually reads as male/female at this size.
+
+Acronym values (BMI, BMR, TDEE, LBM) show a small ⓘ next to the label — hover it for what the acronym stands for.
 
 ## Requirements
 

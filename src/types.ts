@@ -61,12 +61,23 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   waist: 'Waist',
   hip: 'Hip',
   bmi: 'BMI',
-  lbm: 'Lean Body Mass',
+  lbm: 'LBM',
   fat_mass: 'Fat Mass',
   muscle_mass_kg: 'Muscle Mass',
   water_mass_kg: 'Water Mass',
   bmr: 'BMR',
   tdee: 'TDEE',
+};
+
+/**
+ * Explains what an acronym metric actually stands for — shown as a hover
+ * hint next to the label, since "BMR" or "TDEE" alone isn't self-evident.
+ */
+export const METRIC_HINTS: Partial<Record<MetricKey, string>> = {
+  bmi: 'Body Mass Index — weight relative to height (weight ÷ height²).',
+  lbm: 'Lean Body Mass — total weight minus fat mass.',
+  bmr: 'Basal Metabolic Rate — calories your body burns at complete rest.',
+  tdee: 'Total Daily Energy Expenditure — BMR scaled by your activity level.',
 };
 
 /** Units for metrics the card computes itself (raw entities use their own unit_of_measurement). */

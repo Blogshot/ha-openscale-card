@@ -42,7 +42,13 @@ export function renderCallouts(rows: ResolvedMetric[], gender: Gender): Template
       <g transform="translate(${silhouetteOffsetX}, 0)">${renderSilhouette(gender)}</g>
       ${leftCallouts.map(
         ({ row, y }) => svg`
-          <text x="20" y=${y - 6} class="callout-label" text-anchor="end">${row.label}</text>
+          <text
+            x="20" y=${y - 6}
+            class="callout-label ${row.hint ? 'has-hint' : ''}"
+            text-anchor="end"
+          >
+            ${row.label}${row.hint ? svg`<title>${row.hint}</title>` : ''}
+          </text>
           <text x="20" y=${y + 12} class="callout-value" text-anchor="end">
             ${row.formatted} ${row.unit}${row.trend ? ` ${TREND_ARROWS[row.trend]}` : ''}
           </text>
@@ -50,7 +56,13 @@ export function renderCallouts(rows: ResolvedMetric[], gender: Gender): Template
       )}
       ${rightCallouts.map(
         ({ row, y }) => svg`
-          <text x="440" y=${y - 6} class="callout-label" text-anchor="start">${row.label}</text>
+          <text
+            x="440" y=${y - 6}
+            class="callout-label ${row.hint ? 'has-hint' : ''}"
+            text-anchor="start"
+          >
+            ${row.label}${row.hint ? svg`<title>${row.hint}</title>` : ''}
+          </text>
           <text x="440" y=${y + 12} class="callout-value" text-anchor="start">
             ${row.formatted} ${row.unit}${row.trend ? ` ${TREND_ARROWS[row.trend]}` : ''}
           </text>
