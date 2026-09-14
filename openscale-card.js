@@ -67,7 +67,7 @@ const w=globalThis,A=t=>t,x=w.trustedTypes,E=x?x.createPolicy("lit-html",{create
       <path d=${s.legLeft}></path>
       <path d=${s.legRight}></path>
     </g>
-  `}function Ct(t){return t?I`<span class="hint-icon" title=${t}>ⓘ</span>`:""}class St{constructor(){this.previous=new Map}update(t,e){const s=this.previous.get(t);if(this.previous.set(t,e),void 0===s)return;const i=e-s;return Math.abs(i)<1e-6?"flat":i>0?"up":"down"}}const Mt={up:"↑",down:"↓",flat:"→"};function kt(t){return t?I`<span class="trend trend-${t}">${Mt[t]}</span>`:Z}const Ot=2*Math.PI*82,Pt="#5b8def",Ut="#5bd18b",Rt="#e6b85b",Qt="#e05b5b",Tt=new Set(["water","water_mass_kg","body_fat","fat_mass","muscle_mass","muscle_mass_kg","bone_mass"]);function Ht(t,e){return t.find(t=>t.key===e)}function Lt(t){const e=Ht(t,"water").value,s=Ht(t,"body_fat").value,i=function(t){const e=Ht(t,"bone_mass");if(!e)return 0;if("%"===e.unit)return e.value;const s=Ht(t,"weight");return s&&s.value>0?e.value/s.value*100:0}(t),n=function(t,e,s=0){return{water:t,fat:e,bone:s,other:Math.max(0,100-t-e-s)}}(e,s,i),o=[{label:"Water",pct:n.water,color:Pt},{label:"Other lean mass",pct:n.other,color:Ut},{label:"Fat",pct:n.fat,color:Rt}];return n.bone>0&&o.push({label:"Bone",pct:n.bone,color:Qt}),o.filter(t=>t.pct>0)}class Nt extends lt{constructor(){super(...arguments),this.trendTracker=new St}setConfig(t){if(!t||!t.metrics)throw new Error('Invalid configuration: "metrics" is required.');this.config={...t,display_mode:t.display_mode??"grid",gender:t.gender??"male"}}set hass(t){this.hassObj=t,this.requestUpdate()}getCardSize(){switch(this.config?.display_mode){case"callouts":case"donut":return 6;default:return 4}}static getConfigElement(){return document.createElement("openscale-card-editor")}static getStubConfig(){return{type:"custom:openscale-card",gender:"male",display_mode:"grid",metrics:{weight:{},body_fat:{},muscle_mass:{},water:{}}}}render(){if(!this.config||!this.hassObj)return I``;const t=this.config,e=t.gender??"male",s=function(t,e,s){const i=Object.entries(e.metrics),n=[];for(const[o,r]of i){if(!r)continue;let i,a,l;if(r.entity){const e=t.states[r.entity],s=e?parseFloat(e.state):NaN;if(!e||!Number.isFinite(s))continue;i=s,a=e.state,l=e.attributes?.unit_of_measurement??""}else{const s=xt(o,t,e.metrics,e);if(void 0===s)continue;i=s,a=s.toFixed(mt[o]??1),l=pt[o]??""}n.push({key:o,label:dt[o],value:i,formatted:a,unit:l,trend:s.update(o,i),hint:ut[o]})}return n}(this.hassObj,t,this.trendTracker),i=t.display_mode??"grid",n="donut"===i&&function(t){return!!Ht(t,"water")&&!!Ht(t,"body_fat")}(s)?function(t,e){const s=Lt(t);let i=0;const n=s.map(t=>{const e=Math.max(0,t.pct/100*Ot-4),s=-i;return i+=t.pct/100*Ot,W`
+  `}function Ct(t){return t?I`<span class="hint-icon" title=${t}>ⓘ</span>`:""}class St{constructor(){this.previous=new Map}update(t,e){const s=this.previous.get(t);if(this.previous.set(t,e),void 0===s)return;const i=e-s;return Math.abs(i)<1e-6?"flat":i>0?"up":"down"}}const Mt={up:"↑",down:"↓",flat:"→"};function kt(t){return t?I`<span class="trend trend-${t}">${Mt[t]}</span>`:Z}const Ot=2*Math.PI*82,Pt="#5b8def",Ut="#5bd18b",Rt="#e6b85b",Qt="#e05b5b",Tt=new Set(["water","water_mass_kg","body_fat","fat_mass","muscle_mass","muscle_mass_kg","bone_mass"]);function Ht(t,e){return t.find(t=>t.key===e)}function Lt(t){const e=Ht(t,"water").value,s=Ht(t,"body_fat").value,i=function(t){const e=Ht(t,"bone_mass");if(!e)return 0;if("%"===e.unit)return e.value;const s=Ht(t,"weight");return s&&s.value>0?e.value/s.value*100:0}(t),n=function(t,e,s=0){return{water:t,fat:e,bone:s,other:Math.max(0,100-t-e-s)}}(e,s,i),o=[{label:"Water",pct:n.water,color:Pt},{label:"Other lean mass",pct:n.other,color:Ut},{label:"Fat",pct:n.fat,color:Rt}];return n.bone>0&&o.push({label:"Bone",pct:n.bone,color:Qt}),o.filter(t=>t.pct>0)}const Nt=620;class Bt extends lt{constructor(){super(...arguments),this.trendTracker=new St}setConfig(t){if(!t||!t.metrics)throw new Error('Invalid configuration: "metrics" is required.');this.config={...t,display_mode:t.display_mode??"grid",gender:t.gender??"male"}}set hass(t){this.hassObj=t,this.requestUpdate()}getCardSize(){switch(this.config?.display_mode){case"callouts":case"donut":return 6;default:return 4}}static getConfigElement(){return document.createElement("openscale-card-editor")}static getStubConfig(){return{type:"custom:openscale-card",gender:"male",display_mode:"grid",metrics:{weight:{},body_fat:{},muscle_mass:{},water:{}}}}render(){if(!this.config||!this.hassObj)return I``;const t=this.config,e=t.gender??"male",s=function(t,e,s){const i=Object.entries(e.metrics),n=[];for(const[o,r]of i){if(!r)continue;let i,a,l;if(r.entity){const e=t.states[r.entity],s=e?parseFloat(e.state):NaN;if(!e||!Number.isFinite(s))continue;i=s,a=e.state,l=e.attributes?.unit_of_measurement??""}else{const s=xt(o,t,e.metrics,e);if(void 0===s)continue;i=s,a=s.toFixed(mt[o]??1),l=pt[o]??""}n.push({key:o,label:dt[o],value:i,formatted:a,unit:l,trend:s.update(o,i),hint:ut[o]})}return n}(this.hassObj,t,this.trendTracker),i=t.display_mode??"grid",n="donut"===i&&function(t){return!!Ht(t,"water")&&!!Ht(t,"body_fat")}(s)?function(t,e){const s=Lt(t);let i=0;const n=s.map(t=>{const e=Math.max(0,t.pct/100*Ot-4),s=-i;return i+=t.pct/100*Ot,W`
       <circle
         r=${82}
         fill="none"
@@ -102,36 +102,36 @@ const w=globalThis,A=t=>t,x=w.trustedTypes,E=x?x.createPolicy("lit-html",{create
             </div>
           `:""}
     </div>
-  `}(s,e):"callouts"===i?function(t,e){const s=t.filter((t,e)=>e%2==0),i=t.filter((t,e)=>e%2==1),n=Math.max(s.length,i.length,1),o=Math.max(240,55+34*n+20),r=(t,e)=>e<=1?o/2:55+t*(o-55-20)/(e-1),a=s.map((t,e)=>({row:t,y:r(e,s.length),anchorX:190})),l=i.map((t,e)=>({row:t,y:r(e,i.length),anchorX:270}));return I`
-    <svg class="callouts-mode" viewBox="0 0 460 ${o}">
+  `}(s,e):"callouts"===i?function(t,e){const s=t.filter((t,e)=>e%2==0),i=t.filter((t,e)=>e%2==1),n=Math.max(s.length,i.length,1),o=Math.max(240,55+34*n+20),r=(t,e)=>e<=1?o/2:55+t*(o-55-20)/(e-1),a=s.map((t,e)=>({row:t,y:r(e,s.length),anchorX:270})),l=i.map((t,e)=>({row:t,y:r(e,i.length),anchorX:350}));return I`
+    <svg class="callouts-mode" viewBox="0 0 ${Nt} ${o}">
       ${a.map(({y:t,anchorX:e})=>W`
-          <line x1=${e} y1=${t} x2="30" y2=${t} class="callout-line"></line>
+          <line x1=${e} y1=${t} x2=${95} y2=${t} class="callout-line"></line>
         `)}
       ${l.map(({y:t,anchorX:e})=>W`
-          <line x1=${e} y1=${t} x2="430" y2=${t} class="callout-line"></line>
+          <line x1=${e} y1=${t} x2=${525} y2=${t} class="callout-line"></line>
         `)}
-      <g transform="translate(${120}, 0)">${Et(e)}</g>
+      <g transform="translate(${200}, 0)">${Et(e)}</g>
       ${a.map(({row:t,y:e})=>W`
           <text
-            x="20" y=${e-6}
+            x=${85} y=${e-6}
             class="callout-label ${t.hint?"has-hint":""}"
             text-anchor="end"
           >
             ${t.label}${t.hint?W`<title>${t.hint}</title>`:""}
           </text>
-          <text x="20" y=${e+12} class="callout-value" text-anchor="end">
+          <text x=${85} y=${e+12} class="callout-value" text-anchor="end">
             ${t.formatted} ${t.unit}${t.trend?` ${Mt[t.trend]}`:""}
           </text>
         `)}
       ${l.map(({row:t,y:e})=>W`
           <text
-            x="440" y=${e-6}
+            x=${535} y=${e-6}
             class="callout-label ${t.hint?"has-hint":""}"
             text-anchor="start"
           >
             ${t.label}${t.hint?W`<title>${t.hint}</title>`:""}
           </text>
-          <text x="440" y=${e+12} class="callout-value" text-anchor="start">
+          <text x=${535} y=${e+12} class="callout-value" text-anchor="start">
             ${t.formatted} ${t.unit}${t.trend?` ${Mt[t.trend]}`:""}
           </text>
         `)}
@@ -155,7 +155,7 @@ const w=globalThis,A=t=>t,x=w.trustedTypes,E=x?x.createPolicy("lit-html",{create
       <ha-card .header=${t.title??"OpenScale"}>
         <div class="content">${n}</div>
       </ha-card>
-    `}}Nt.styles=o`
+    `}}Bt.styles=o`
     .content {
       padding: 16px;
     }
@@ -270,4 +270,4 @@ const w=globalThis,A=t=>t,x=w.trustedTypes,E=x?x.createPolicy("lit-html",{create
       width: 100%;
       margin-top: 8px;
     }
-  `,customElements.define("openscale-card",Nt);const Bt=window;Bt.customCards=Bt.customCards||[],Bt.customCards.push({type:"openscale-card",name:"OpenScale Card",description:"Displays openScale-sync body composition data as a schematic body silhouette."});export{Nt as OpenscaleCard};
+  `,customElements.define("openscale-card",Bt);const Dt=window;Dt.customCards=Dt.customCards||[],Dt.customCards.push({type:"openscale-card",name:"OpenScale Card",description:"Displays openScale-sync body composition data as a schematic body silhouette."});export{Bt as OpenscaleCard};
