@@ -51,6 +51,11 @@ describe('TrendTracker', () => {
       const firstRender = tracker.update('weight', 74.9, source);
       expect(firstRender).toBeUndefined();
       expect(callApi).toHaveBeenCalledWith('GET', expect.stringContaining('filter_entity_id=sensor.openscale_weight'));
+      // Home Assistant's history endpoint defaults `end_time` to just one
+      // day *after* the start timestamp, not "now" — a request missing
+      // `end_time` silently returns an empty result for any lookback
+      // longer than a day, which is exactly what happened in production.
+      expect(callApi).toHaveBeenCalledWith('GET', expect.stringContaining('end_time='));
 
       await flushMicrotasks();
 

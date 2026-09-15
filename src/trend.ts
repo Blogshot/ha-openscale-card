@@ -23,7 +23,13 @@ export interface HistorySource {
 async function seedFromHistory(hass: HistorySource, entityId: string): Promise<number | undefined> {
   try {
     const start = new Date(Date.now() - HISTORY_LOOKBACK_MS).toISOString();
-    const path = `history/period/${start}?filter_entity_id=${encodeURIComponent(entityId)}&minimal_response`;
+    // Home Assistant's history endpoint defaults `end_time` to just one day
+    // *after* `start`, not "now" — omitting it here silently windowed every
+    // lookup into ancient history no sensor had data for yet, so it always
+    // came back empty. Passing `end_time` explicitly is what actually makes
+    // this a "last 30 days up to now" query.
+    const end = new Date().toISOString();
+    const path = `history/period/${start}?filter_entity_id=${encodeURIComponent(entityId)}&end_time=${encodeURIComponent(end)}&minimal_response`;
     const result = await hass.callApi('GET', path);
     const series = Array.isArray(result) ? (result[0] as Array<{ state?: string }> | undefined) : undefined;
     if (!Array.isArray(series) || series.length < 2) {
