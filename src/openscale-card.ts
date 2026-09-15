@@ -53,9 +53,19 @@ export class OpenscaleCard extends LitElement {
       line-height: 1;
       vertical-align: middle;
     }
-    /* Only the HTML <span> version (grid rows, donut-extra rows) — an SVG <tspan> sets its own font-size, see trend-arrow.ts. */
+    /*
+     * Only the HTML <span> version (grid rows, donut-extra rows) — an SVG
+     * <tspan> sets its own font-size and width, see trend-arrow.ts. A fixed
+     * width keeps the glyph centered in the same box regardless of
+     * ↑/↓/→'s own (different) natural width, e.g. so a row's trailing
+     * arrow doesn't nudge the value text beside it left or right depending
+     * on which direction happens to be showing.
+     */
     .trend-lg {
+      display: inline-block;
+      width: 1.2em;
       font-size: 32px;
+      text-align: center;
     }
     /*
      * Colored by quality (good/bad relative to a configured goal), not by

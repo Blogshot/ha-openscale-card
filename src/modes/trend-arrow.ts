@@ -30,10 +30,16 @@ export function renderTrendArrow(trend: TrendDirection | undefined, quality: Tre
  * value that looks right on the HTML arrow renders far smaller here. This
  * value is tuned by eye against the surrounding 13-unit label text, not
  * meant to visually match the HTML version's exact pixel size.
+ *
+ * `textLength`/`lengthAdjust` pin the glyph to a fixed rendered width —
+ * ↑/↓/→ aren't the same width in any real font, so without this, a
+ * `text-anchor="end"` row's value shifts left or right by however much
+ * narrower or wider that render's specific arrow happens to be, and the
+ * numbers across rows stop lining up in a column.
  */
 export function renderTrendTspan(trend: TrendDirection | undefined, quality: TrendQuality = 'neutral'): SVGTemplateResult | typeof nothing {
   if (!trend) {
     return nothing;
   }
-  return svg` <tspan class="trend trend-${quality}" font-size="22">${TREND_ARROWS[trend]}</tspan>`;
+  return svg` <tspan class="trend trend-${quality}" font-size="22" textLength="16" lengthAdjust="spacingAndGlyphs">${TREND_ARROWS[trend]}</tspan>`;
 }
