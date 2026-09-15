@@ -41,10 +41,20 @@ export function renderTrendArrow(trend: TrendDirection | undefined, quality: Tre
  * value text (see callouts.ts/donut.ts) and add whatever gap that
  * ordering needs, since the right amount differs depending on which side
  * the arrow ends up on.
+ *
+ * `fontSize`/`textLength` are parameters, not a shared constant, because
+ * callouts.ts and donut.ts scale their surrounding label/value text
+ * differently (callouts has much more room around the silhouette) — each
+ * caller passes values tuned to its own text size.
  */
-export function renderTrendTspan(trend: TrendDirection | undefined, quality: TrendQuality = 'neutral'): SVGTemplateResult | typeof nothing {
+export function renderTrendTspan(
+  trend: TrendDirection | undefined,
+  quality: TrendQuality = 'neutral',
+  fontSize = 22,
+  textLength = 16,
+): SVGTemplateResult | typeof nothing {
   if (!trend) {
     return nothing;
   }
-  return svg`<tspan class="trend trend-${quality}" font-size="22" textLength="16" lengthAdjust="spacingAndGlyphs">${TREND_ARROWS[trend]}</tspan>`;
+  return svg`<tspan class="trend trend-${quality}" font-size=${fontSize} textLength=${textLength} lengthAdjust="spacingAndGlyphs">${TREND_ARROWS[trend]}</tspan>`;
 }

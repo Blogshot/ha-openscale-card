@@ -126,6 +126,13 @@ export class OpenscaleCard extends LitElement {
       font-weight: 600;
       fill: var(--primary-text-color, #222);
     }
+    /* Callouts mode has much more room around the silhouette than the donut ring, so its label/value text scales up to match the grid mode's real (HTML) text size. */
+    .callouts-mode .callout-label {
+      font-size: 44px;
+    }
+    .callouts-mode .callout-value {
+      font-size: 48px;
+    }
 
     /* Donut mode */
     .donut-mode {
