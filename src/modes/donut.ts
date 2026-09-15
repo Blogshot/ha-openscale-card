@@ -4,8 +4,8 @@ import { Gender } from '../types';
 import { ResolvedMetric } from '../metrics-resolver';
 import { renderSilhouette } from '../silhouette';
 import { renderHintIcon } from './hint';
-import { renderTrendArrow } from './trend-arrow';
-import { TrendDirection, TREND_ARROWS } from '../trend';
+import { renderTrendArrow, renderTrendTspan } from './trend-arrow';
+import { TrendDirection, TrendQuality } from '../trend';
 
 const RADIUS = 82;
 const STROKE_WIDTH = 16;
@@ -31,6 +31,7 @@ interface Segment {
   arcPct: number;
   color: string;
   trend?: TrendDirection;
+  trendQuality: TrendQuality;
 }
 
 const SEGMENT_COLORS = {
@@ -78,11 +79,11 @@ function ringSegments(rows: ResolvedMetric[]): Segment[] {
   const s = computeDonutSegments(waterRow.value, muscleRow.value, fatRow.value, bonePct);
 
   const segments: Segment[] = [
-    { key: 'water', label: 'Water', pct: waterRow.value, arcPct: s.water, color: SEGMENT_COLORS.water, trend: waterRow.trend },
-    { key: 'muscle', label: 'Muscle', pct: muscleRow.value, arcPct: s.muscle, color: SEGMENT_COLORS.muscle, trend: muscleRow.trend },
-    { key: 'fat', label: 'Fat', pct: fatRow.value, arcPct: s.fat, color: SEGMENT_COLORS.fat, trend: fatRow.trend },
-    { key: 'bone', label: 'Bone', pct: bonePct, arcPct: s.bone, color: SEGMENT_COLORS.bone, trend: boneRow?.trend },
-    { key: 'other', label: 'Other', pct: s.other, arcPct: s.other, color: SEGMENT_COLORS.other },
+    { key: 'water', label: 'Water', pct: waterRow.value, arcPct: s.water, color: SEGMENT_COLORS.water, trend: waterRow.trend, trendQuality: waterRow.trendQuality },
+    { key: 'muscle', label: 'Muscle', pct: muscleRow.value, arcPct: s.muscle, color: SEGMENT_COLORS.muscle, trend: muscleRow.trend, trendQuality: muscleRow.trendQuality },
+    { key: 'fat', label: 'Fat', pct: fatRow.value, arcPct: s.fat, color: SEGMENT_COLORS.fat, trend: fatRow.trend, trendQuality: fatRow.trendQuality },
+    { key: 'bone', label: 'Bone', pct: bonePct, arcPct: s.bone, color: SEGMENT_COLORS.bone, trend: boneRow?.trend, trendQuality: boneRow?.trendQuality ?? 'neutral' },
+    { key: 'other', label: 'Other', pct: s.other, arcPct: s.other, color: SEGMENT_COLORS.other, trendQuality: 'neutral' },
   ];
   return segments.filter((segment) => segment.arcPct > 0.05);
 }
@@ -155,7 +156,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
             <circle cx=${point.x} cy=${point.y} r="3" fill=${segment.color}></circle>
             <text x=${leftTextX} y=${labelY - 4} class="callout-label" text-anchor="end">${segment.label}</text>
             <text x=${leftTextX} y=${labelY + 13} class="callout-value" text-anchor="end">
-              ${segment.pct.toFixed(1)}%${segment.trend ? ` ${TREND_ARROWS[segment.trend]}` : ''}
+              ${segment.pct.toFixed(1)}%${renderTrendTspan(segment.trend, segment.trendQuality)}
             </text>
           `;
         })}
@@ -165,7 +166,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
             <circle cx=${point.x} cy=${point.y} r="3" fill=${segment.color}></circle>
             <text x=${rightTextX} y=${labelY - 4} class="callout-label" text-anchor="start">${segment.label}</text>
             <text x=${rightTextX} y=${labelY + 13} class="callout-value" text-anchor="start">
-              ${segment.pct.toFixed(1)}%${segment.trend ? ` ${TREND_ARROWS[segment.trend]}` : ''}
+              ${segment.pct.toFixed(1)}%${renderTrendTspan(segment.trend, segment.trendQuality)}
             </text>
           `;
         })}
@@ -177,7 +178,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
                 (row) => html`
                   <div class="row">
                     <span class="label">${row.label}${renderHintIcon(row.hint)}</span>
-                    <span class="value">${row.formatted} ${row.unit} ${renderTrendArrow(row.trend)}</span>
+                    <span class="value">${row.formatted} ${row.unit} ${renderTrendArrow(row.trend, row.trendQuality)}</span>
                   </div>
                 `,
               )}

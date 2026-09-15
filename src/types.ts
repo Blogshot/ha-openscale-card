@@ -26,6 +26,14 @@ export interface MetricConfig {
    */
   entity?: string;
   range?: MetricRange;
+  /**
+   * Target value for this metric. When set, a trend arrow is colored by
+   * whether the new reading moved closer to (green) or farther from (red)
+   * this goal — not by raw direction, since e.g. rising muscle mass is
+   * desirable while rising body fat usually isn't. Without a goal, arrows
+   * stay neutrally colored regardless of direction.
+   */
+  goal?: number;
 }
 
 export const METRIC_KEYS = [

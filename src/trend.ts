@@ -2,6 +2,13 @@ import { MetricKey } from './types';
 
 export type TrendDirection = 'up' | 'down' | 'flat';
 
+/**
+ * Whether a trend is desirable, not just which way it points. `'neutral'`
+ * covers both "no goal configured" and "value unchanged" — arrows never
+ * imply good/bad without an explicit goal to judge them against.
+ */
+export type TrendQuality = 'good' | 'bad' | 'neutral';
+
 /** Smallest change treated as real movement rather than float noise. */
 const EPSILON = 1e-6;
 
@@ -51,6 +58,28 @@ async function seedFromHistory(hass: HistorySource, entityId: string): Promise<n
 }
 
 /**
+ * Whether moving from `previous` to `value` brought the reading closer to
+ * `goal` (good), farther away (bad), or — with no goal configured — neither.
+ * Deliberately ignores raw direction: rising muscle mass is good, rising
+ * body fat usually isn't, and which one applies depends entirely on where
+ * the goal sits relative to the current reading.
+ */
+function computeTrendQuality(previous: number, value: number, goal?: number): TrendQuality {
+  if (goal === undefined) {
+    return 'neutral';
+  }
+  const distanceBefore = Math.abs(previous - goal);
+  const distanceAfter = Math.abs(value - goal);
+  if (distanceAfter < distanceBefore - EPSILON) {
+    return 'good';
+  }
+  if (distanceAfter > distanceBefore + EPSILON) {
+    return 'bad';
+  }
+  return 'neutral';
+}
+
+/**
  * Tracks the last-seen value per metric and reports whether a new value
  * moved up, down, or stayed flat. Returns undefined the first time a metric
  * is observed in this tracker instance, since there is nothing to compare
@@ -76,6 +105,7 @@ async function seedFromHistory(hass: HistorySource, entityId: string): Promise<n
 export class TrendTracker {
   private previous = new Map<MetricKey, number>();
   private lastTrend = new Map<MetricKey, TrendDirection>();
+  private lastQuality = new Map<MetricKey, TrendQuality>();
   private readonly onSeeded?: () => void;
   private readonly seeding = new Set<MetricKey>();
 
@@ -83,7 +113,12 @@ export class TrendTracker {
     this.onSeeded = onSeeded;
   }
 
-  update(key: MetricKey, value: number, source?: { hass: HistorySource; entityId?: string }): TrendDirection | undefined {
+  update(
+    key: MetricKey,
+    value: number,
+    source?: { hass: HistorySource; entityId?: string },
+    goal?: number,
+  ): TrendDirection | undefined {
     const last = this.previous.get(key);
     if (last === undefined) {
       this.trySeedFromHistory(key, value, source);
@@ -99,14 +134,25 @@ export class TrendTracker {
     // across all of those in-between renders instead of only the one
     // render where the change was first observed — comparing `value` to
     // `last` again on every following render (both still the same reading)
-    // would always recompute "flat" and immediately erase it.
+    // would always recompute "flat" and immediately erase it. The cached
+    // quality (see `getQuality`) rides along for exactly the same reason.
     if (Math.abs(value - last) < EPSILON) {
       return this.lastTrend.get(key) ?? 'flat';
     }
     const trend: TrendDirection = value > last ? 'up' : 'down';
     this.previous.set(key, value);
     this.lastTrend.set(key, trend);
+    this.lastQuality.set(key, computeTrendQuality(last, value, goal));
     return trend;
+  }
+
+  /**
+   * Whether the most recently reported trend for `key` is desirable —
+   * always `'neutral'` until a `goal` has been passed to `update()` at
+   * least once for a genuine change. Call after `update()`.
+   */
+  getQuality(key: MetricKey): TrendQuality {
+    return this.lastQuality.get(key) ?? 'neutral';
   }
 
   private trySeedFromHistory(key: MetricKey, currentValue: number, source?: { hass: HistorySource; entityId?: string }): void {

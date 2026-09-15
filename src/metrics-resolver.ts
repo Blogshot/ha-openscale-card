@@ -8,7 +8,7 @@ import {
   computeWaterMassKg,
 } from './compute';
 import { COMPUTED_METRIC_DECIMALS, COMPUTED_METRIC_UNITS, METRIC_HINTS, METRIC_LABELS, MetricKey, OpenscaleCardConfig } from './types';
-import { TrendDirection, TrendTracker } from './trend';
+import { TrendDirection, TrendQuality, TrendTracker } from './trend';
 
 export interface HassEntity {
   state: string;
@@ -32,6 +32,8 @@ export interface ResolvedMetric {
   formatted: string;
   unit: string;
   trend?: TrendDirection;
+  /** Whether `trend` is desirable — always 'neutral' unless a `goal` is configured for this metric, see trend.ts. */
+  trendQuality: TrendQuality;
   /** Shown as a hover hint — explains acronyms like BMR/TDEE/BMI/LBM. */
   hint?: string;
 }
@@ -111,7 +113,7 @@ export function resolveMetricRows(
   config: OpenscaleCardConfig,
   tracker: TrendTracker,
 ): ResolvedMetric[] {
-  const entries = Object.entries(config.metrics) as [MetricKey, { entity?: string } | undefined][];
+  const entries = Object.entries(config.metrics) as [MetricKey, { entity?: string; goal?: number } | undefined][];
   const rows: ResolvedMetric[] = [];
 
   for (const [key, metric] of entries) {
@@ -142,16 +144,19 @@ export function resolveMetricRows(
       unit = COMPUTED_METRIC_UNITS[key] ?? '';
     }
 
+    const trend =
+      metric.entity && typeof hassObj.callApi === 'function'
+        ? tracker.update(key, value, { hass: { callApi: hassObj.callApi.bind(hassObj) }, entityId: metric.entity }, metric.goal)
+        : tracker.update(key, value, undefined, metric.goal);
+
     rows.push({
       key,
       label: METRIC_LABELS[key],
       value,
       formatted,
       unit,
-      trend:
-        metric.entity && typeof hassObj.callApi === 'function'
-          ? tracker.update(key, value, { hass: { callApi: hassObj.callApi.bind(hassObj) }, entityId: metric.entity })
-          : tracker.update(key, value),
+      trend,
+      trendQuality: tracker.getQuality(key),
       hint: METRIC_HINTS[key],
     });
   }

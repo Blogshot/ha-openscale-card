@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { ACTIVITY_FACTORS, MetricKey, OpenscaleCardConfig } from './types';
+import { ACTIVITY_FACTORS, METRIC_LABELS, MetricKey, OpenscaleCardConfig } from './types';
 
 interface HomeAssistant {
   states: Record<string, { state: string; attributes: Record<string, unknown> }>;
@@ -120,6 +120,11 @@ export class OpenscaleCardEditor extends LitElement {
     .section-title:first-child {
       margin-top: 0;
     }
+    .section-hint {
+      margin: 0 0 8px;
+      font-size: 12.5px;
+      color: var(--secondary-text-color, #888);
+    }
     ha-form {
       display: block;
       margin-bottom: 8px;
@@ -160,6 +165,28 @@ export class OpenscaleCardEditor extends LitElement {
     const data: Record<string, boolean> = {};
     for (const { key, field } of COMPUTED_METRIC_FIELDS) {
       data[field] = !!metrics[key];
+    }
+    return data;
+  }
+
+  /** One number field per currently-configured metric — built dynamically, since which metrics exist varies per card. */
+  private get _goalFields(): { key: MetricKey; field: string }[] {
+    return (Object.keys(this.config!.metrics) as MetricKey[]).map((key) => ({ key, field: `goal_${key}` }));
+  }
+
+  private get _goalsSchema(): FormSchemaEntry[] {
+    return this._goalFields.map(({ key, field }) => ({
+      name: field,
+      label: METRIC_LABELS[key],
+      selector: { number: { mode: 'box' } },
+    }));
+  }
+
+  private get _goalsData(): Record<string, number | undefined> {
+    const metrics = this.config!.metrics;
+    const data: Record<string, number | undefined> = {};
+    for (const { key, field } of this._goalFields) {
+      data[field] = metrics[key]?.goal;
     }
     return data;
   }
@@ -225,6 +252,25 @@ export class OpenscaleCardEditor extends LitElement {
     this._fireConfigChanged({ ...this.config, metrics });
   };
 
+  private _goalsChanged = (ev: ValueChangedEvent<Record<string, number | undefined>>) => {
+    if (!this.config) {
+      return;
+    }
+    const value = ev.detail.value;
+    const metrics = { ...this.config.metrics };
+    for (const { key, field } of this._goalFields) {
+      const goal = value[field];
+      if (goal === undefined || goal === null) {
+        const rest = { ...metrics[key] };
+        delete rest.goal;
+        metrics[key] = rest;
+      } else {
+        metrics[key] = { ...metrics[key], goal };
+      }
+    }
+    this._fireConfigChanged({ ...this.config, metrics });
+  };
+
   protected render() {
     if (!this.config || !this.hassObj) {
       return html``;
@@ -257,6 +303,24 @@ export class OpenscaleCardEditor extends LitElement {
         .computeLabel=${this._computeLabel}
         @value-changed=${this._computedMetricsChanged}
       ></ha-form>
+
+      ${this._goalFields.length
+        ? html`
+            <div class="section-title">Goals (optional)</div>
+            <p class="section-hint">
+              Colors a metric's trend arrow by whether it moved closer to (green) or farther from (red) its goal — not by raw
+              direction, since e.g. rising muscle mass is desirable while rising body fat usually isn't. Leave a metric blank for
+              a plain, uncolored arrow.
+            </p>
+            <ha-form
+              .hass=${this.hassObj}
+              .data=${this._goalsData}
+              .schema=${this._goalsSchema}
+              .computeLabel=${this._computeLabel}
+              @value-changed=${this._goalsChanged}
+            ></ha-form>
+          `
+        : ''}
     `;
   }
 }

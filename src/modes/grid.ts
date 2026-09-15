@@ -17,7 +17,7 @@ export function renderGrid(rows: ResolvedMetric[], gender: Gender): TemplateResu
               <span class="label">${row.label}${renderHintIcon(row.hint)}</span>
               <span class="value">
                 ${row.formatted} ${row.unit}
-                ${renderTrendArrow(row.trend)}
+                ${renderTrendArrow(row.trend, row.trendQuality)}
               </span>
             </div>
           `,

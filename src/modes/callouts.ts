@@ -2,7 +2,7 @@ import { html, svg, TemplateResult } from 'lit';
 import { Gender } from '../types';
 import { ResolvedMetric } from '../metrics-resolver';
 import { renderSilhouette } from '../silhouette';
-import { TREND_ARROWS } from '../trend';
+import { renderTrendTspan } from './trend-arrow';
 
 // Real label/value text ("Muscle Mass", "2618 kcal ↑") needs real
 // horizontal room — an SVG clips anything outside its own viewBox, so the
@@ -72,7 +72,7 @@ export function renderCallouts(rows: ResolvedMetric[], gender: Gender): Template
             ${row.label}${row.hint ? svg`<title>${row.hint}</title>` : ''}
           </text>
           <text x=${leftTextX} y=${y + 12} class="callout-value" text-anchor="end">
-            ${row.formatted} ${row.unit}${row.trend ? ` ${TREND_ARROWS[row.trend]}` : ''}
+            ${row.formatted} ${row.unit}${renderTrendTspan(row.trend, row.trendQuality)}
           </text>
         `,
       )}
@@ -86,7 +86,7 @@ export function renderCallouts(rows: ResolvedMetric[], gender: Gender): Template
             ${row.label}${row.hint ? svg`<title>${row.hint}</title>` : ''}
           </text>
           <text x=${rightTextX} y=${y + 12} class="callout-value" text-anchor="start">
-            ${row.formatted} ${row.unit}${row.trend ? ` ${TREND_ARROWS[row.trend]}` : ''}
+            ${row.formatted} ${row.unit}${renderTrendTspan(row.trend, row.trendQuality)}
           </text>
         `,
       )}

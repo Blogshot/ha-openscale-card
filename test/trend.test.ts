@@ -51,6 +51,61 @@ describe('TrendTracker', () => {
     }
   });
 
+  describe('goal-aware trend quality', () => {
+    it('is neutral when no goal is configured, regardless of direction', () => {
+      const tracker = new TrendTracker();
+      tracker.update('weight', 74.9);
+      tracker.update('weight', 75.2);
+      expect(tracker.getQuality('weight')).toBe('neutral');
+    });
+
+    it('is good when the value moved closer to the goal', () => {
+      const tracker = new TrendTracker();
+      tracker.update('weight', 74.9, undefined, 73);
+      tracker.update('weight', 74.5, undefined, 73);
+      expect(tracker.getQuality('weight')).toBe('good');
+    });
+
+    it('is bad when the value moved farther from the goal', () => {
+      const tracker = new TrendTracker();
+      tracker.update('weight', 74.9, undefined, 73);
+      tracker.update('weight', 75.5, undefined, 73);
+      expect(tracker.getQuality('weight')).toBe('bad');
+    });
+
+    it('works the same when the goal is above the current value (e.g. muscle mass)', () => {
+      const tracker = new TrendTracker();
+      tracker.update('muscle_mass', 40, undefined, 45);
+      // Moved up, towards the goal -> good, even though "up" is red for weight.
+      expect(tracker.update('muscle_mass', 41, undefined, 45)).toBe('up');
+      expect(tracker.getQuality('muscle_mass')).toBe('good');
+    });
+
+    it('stays neutral for a flat reading even with a goal set', () => {
+      const tracker = new TrendTracker();
+      tracker.update('weight', 74.9, undefined, 73);
+      tracker.update('weight', 74.9, undefined, 73);
+      expect(tracker.getQuality('weight')).toBe('neutral');
+    });
+
+    it('replays the last computed quality across renders with an unchanged value, matching the sticky trend', () => {
+      const tracker = new TrendTracker();
+      tracker.update('weight', 74.9, undefined, 73);
+      tracker.update('weight', 74.5, undefined, 73);
+      expect(tracker.getQuality('weight')).toBe('good');
+
+      for (let i = 0; i < 5; i++) {
+        tracker.update('weight', 74.5, undefined, 73);
+        expect(tracker.getQuality('weight')).toBe('good');
+      }
+    });
+
+    it('defaults to neutral for a metric that has never been updated', () => {
+      const tracker = new TrendTracker();
+      expect(tracker.getQuality('weight')).toBe('neutral');
+    });
+  });
+
   describe('seeding a fresh card from Home Assistant history', () => {
     it('recognizes a real change even from a brand-new tracker instance', async () => {
       // Home Assistant recreates the card element (and a fresh TrendTracker)

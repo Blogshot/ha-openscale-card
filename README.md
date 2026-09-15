@@ -37,7 +37,7 @@ Download `openscale-card.js` from this repository and register it as a Lovelace 
 
 ## Visual editor
 
-The card has a visual configuration UI: add it via the dashboard's card picker (or edit an existing card) and use **Edit** instead of switching to YAML. It's split into three sections — general settings, entity pickers for the four raw openScale-sync sensors (plus optional bone mass/visceral fat/waist/hip if you have them from elsewhere), and on/off toggles for the computed metrics (BMI, lean body mass, fat/muscle/water mass in kg, BMR, TDEE). YAML mode works exactly the same, see below.
+The card has a visual configuration UI: add it via the dashboard's card picker (or edit an existing card) and use **Edit** instead of switching to YAML. It's split into sections — general settings, entity pickers for the four raw openScale-sync sensors (plus optional bone mass/visceral fat/waist/hip if you have them from elsewhere), on/off toggles for the computed metrics (BMI, lean body mass, fat/muscle/water mass in kg, BMR, TDEE), and an optional goal value per currently-configured metric (see [Trend arrows](#trend-arrows)). YAML mode works exactly the same, see below.
 
 ## Configuration
 
@@ -54,6 +54,7 @@ metrics:
   # The four raw measurements openScale-sync actually publishes via MQTT:
   weight:
     entity: sensor.openscale_weight
+    goal: 73             # optional — colors the trend arrow green/red by progress towards this, see below
   body_fat:
     entity: sensor.openscale_body_fat
   muscle_mass:
@@ -82,6 +83,17 @@ Every entry under `metrics` is optional — metrics without an entry are simply 
 ### Trend arrows
 
 Every value shows a small ↑/↓/→ arrow, comparing the current value to the previous one. For the four raw openScale-sync sensors, the card always asks Home Assistant's own history for the entity's prior reading rather than waiting to observe a second value live — Home Assistant recreates the card on every dashboard reload and every Lovelace view change, which happens far more often than a new weigh-in, so relying only on what the card has seen itself would rarely show anything but a first-ever blank render. The history lookup is asynchronous, so the arrow can appear a moment after the rest of the card. Computed metrics (BMI, LBM, BMR, TDEE, ...) have no sensor history of their own to query, so they show an arrow only once the card itself has seen two readings.
+
+The arrow's color is neutral (gray) by default — an arrow never implies "good" or "bad" on its own, since rising muscle mass is desirable while rising body fat usually isn't. Set an optional `goal` on a metric to change that:
+
+```yaml
+metrics:
+  weight:
+    entity: sensor.openscale_weight
+    goal: 73          # kg — whatever unit the metric already uses
+```
+
+With a goal set, the arrow turns green when the new reading moved closer to it and red when it moved farther away — regardless of whether that's technically an increase or a decrease. `goal` works on any metric, raw or computed.
 
 ## Development
 

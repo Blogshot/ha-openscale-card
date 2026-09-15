@@ -50,14 +50,25 @@ export class OpenscaleCard extends LitElement {
       margin-left: 4px;
       font-weight: 400;
     }
-    .trend-up {
-      color: var(--error-color, #db4437);
-    }
-    .trend-down {
+    /*
+     * Colored by quality (good/bad relative to a configured goal), not by
+     * raw up/down direction — rising muscle mass is desirable, rising body
+     * fat usually isn't, and only a goal can tell those apart. Both "color"
+     * (the .trend <span> in grid/donut-extra) and "fill" (the .trend
+     * <tspan> inside callouts/donut-ring SVG text) are set on the same
+     * rule since either property is simply ignored where it doesn't apply.
+     */
+    .trend-good {
       color: var(--success-color, #43a047);
+      fill: var(--success-color, #43a047);
     }
-    .trend-flat {
+    .trend-bad {
+      color: var(--error-color, #db4437);
+      fill: var(--error-color, #db4437);
+    }
+    .trend-neutral {
       color: var(--secondary-text-color, #888);
+      fill: var(--secondary-text-color, #888);
     }
 
     /* Grid mode */
