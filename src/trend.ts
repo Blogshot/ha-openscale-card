@@ -47,48 +47,37 @@ async function seedFromHistory(hass: HistorySource, entityId: string): Promise<n
 /**
  * Tracks the last-seen value per metric and reports whether a new value
  * moved up, down, or stayed flat. Returns undefined the first time a metric
- * is observed, since there is nothing to compare against yet.
+ * is observed in this tracker instance, since there is nothing to compare
+ * against yet.
  *
  * Home Assistant recreates the card element — and with it, a fresh
- * in-memory tracker — on every dashboard reload and every Lovelace view
+ * TrendTracker — on every dashboard reload and every Lovelace view
  * navigation, which happens far more often than openScale-sync actually
- * publishes a new reading (at most once per weigh-in). An in-memory-only
- * tracker would therefore see two genuinely different values in the same
- * instance only by coincidence, and the arrow would appear stuck on "flat"
- * indefinitely. Passing a `storageId` (something stable per card
- * configuration, e.g. the underlying sensor's entity id) additionally
- * persists the last value to `localStorage`, so a freshly created tracker
- * still finds the previous reading. This is per-browser, same as the
- * in-memory version was per-tab: it resets if site data is cleared, or
- * differs across devices/browsers viewing the same dashboard.
- *
- * On top of that, when neither memory nor `localStorage` has a baseline yet
- * (a brand new browser/device, or the very first time this card is added)
- * and an entity id is given, the tracker asks Home Assistant's own history
- * for that entity's previous reading, so a sensor with pre-existing data
- * shows a correct trend arrow right away instead of only after the *next*
- * real weigh-in. That lookup is async, so it can't resolve within the same
- * render that triggered it — `onSeeded` is called once it completes so the
+ * publishes a new reading (at most once per weigh-in). So whenever a metric
+ * has an entity id (the four raw openScale-sync sensors, not a computed one
+ * like BMI), a fresh tracker always asks Home Assistant's own history for
+ * that entity's previous reading rather than waiting for a second live
+ * value to arrive — that lookup is async, so it can't resolve within the
+ * same render that triggered it; `onSeeded` is called once it does, so the
  * caller can request a re-render and pick up the now-known baseline.
+ * Computed metrics have no entity of their own to ask history about, so
+ * they keep showing no arrow until the card itself has seen two readings.
  */
 export class TrendTracker {
   private previous = new Map<MetricKey, number>();
-  private readonly storagePrefix?: string;
   private readonly onSeeded?: () => void;
   private readonly seeding = new Set<MetricKey>();
 
-  constructor(storageId?: string, onSeeded?: () => void) {
-    this.storagePrefix = storageId ? `openscale-card-trend:${storageId}:` : undefined;
+  constructor(onSeeded?: () => void) {
     this.onSeeded = onSeeded;
   }
 
   update(key: MetricKey, value: number, source?: { hass: HistorySource; entityId?: string }): TrendDirection | undefined {
-    const last = this.previous.get(key) ?? this.readPersisted(key);
+    const last = this.previous.get(key);
     if (last === undefined) {
       this.trySeedFromHistory(key, value, source);
     }
     this.previous.set(key, value);
-    this.writePersisted(key, value);
 
     if (last === undefined) {
       return undefined;
@@ -114,37 +103,8 @@ export class TrendTracker {
         return;
       }
       this.previous.set(key, seed);
-      this.writePersisted(key, seed);
       this.onSeeded?.();
     });
-  }
-
-  private readPersisted(key: MetricKey): number | undefined {
-    if (!this.storagePrefix || typeof localStorage === 'undefined') {
-      return undefined;
-    }
-    try {
-      const raw = localStorage.getItem(this.storagePrefix + key);
-      if (raw === null) {
-        return undefined;
-      }
-      const parsed = parseFloat(raw);
-      return Number.isFinite(parsed) ? parsed : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private writePersisted(key: MetricKey, value: number): void {
-    if (!this.storagePrefix || typeof localStorage === 'undefined') {
-      return;
-    }
-    try {
-      localStorage.setItem(this.storagePrefix + key, String(value));
-    } catch {
-      // Storage full, disabled, or unavailable (private browsing) — the
-      // in-memory value still covers the rest of this element's lifetime.
-    }
   }
 }
 
