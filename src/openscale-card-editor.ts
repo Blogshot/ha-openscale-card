@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { ACTIVITY_FACTORS, METRIC_LABELS, MetricKey, OpenscaleCardConfig } from './types';
+import { ACTIVITY_FACTORS, COMPUTED_METRIC_UNITS, MetricKey, OpenscaleCardConfig } from './types';
 
 interface HomeAssistant {
   states: Record<string, { state: string; attributes: Record<string, unknown> }>;
@@ -101,6 +101,61 @@ const COMPUTED_METRICS_SCHEMA: FormSchemaEntry[] = COMPUTED_METRIC_FIELDS.map(({
   selector: { boolean: {} },
 }));
 
+interface GoalFieldDef {
+  key: MetricKey;
+  label: string;
+}
+
+interface GoalCategory {
+  title: string;
+  fields: GoalFieldDef[];
+}
+
+/**
+ * Groups percentage and kg-mass variants of the same thing (e.g. `body_fat`
+ * and `fat_mass`) under one heading instead of listing them as two
+ * unrelated-looking rows — that's what read as duplicated. "Percentage" /
+ * "Mass" as field labels rely on the surrounding category heading for
+ * context; standalone metrics keep a self-explanatory label instead.
+ */
+const GOAL_CATEGORIES: GoalCategory[] = [
+  { title: 'Weight', fields: [{ key: 'weight', label: 'Weight' }] },
+  {
+    title: 'Fat',
+    fields: [
+      { key: 'body_fat', label: 'Percentage' },
+      { key: 'fat_mass', label: 'Mass' },
+    ],
+  },
+  {
+    title: 'Muscle',
+    fields: [
+      { key: 'muscle_mass', label: 'Percentage' },
+      { key: 'muscle_mass_kg', label: 'Mass' },
+    ],
+  },
+  {
+    title: 'Water',
+    fields: [
+      { key: 'water', label: 'Percentage' },
+      { key: 'water_mass_kg', label: 'Mass' },
+    ],
+  },
+  { title: 'Bone', fields: [{ key: 'bone_mass', label: 'Bone Mass' }] },
+  {
+    title: 'Other',
+    fields: [
+      { key: 'visceral_fat', label: 'Visceral Fat' },
+      { key: 'waist', label: 'Waist' },
+      { key: 'hip', label: 'Hip' },
+      { key: 'bmi', label: 'BMI' },
+      { key: 'lbm', label: 'LBM' },
+      { key: 'bmr', label: 'BMR' },
+      { key: 'tdee', label: 'TDEE' },
+    ],
+  },
+];
+
 /**
  * Visual editor for OpenscaleCard, shown in the Lovelace card-config dialog.
  * Uses three separate <ha-form> instances (general settings, raw sensor
@@ -124,6 +179,15 @@ export class OpenscaleCardEditor extends LitElement {
       margin: 0 0 8px;
       font-size: 12.5px;
       color: var(--secondary-text-color, #888);
+    }
+    .section-subtitle {
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--secondary-text-color, #888);
+      margin: 12px 0 2px;
+    }
+    .section-subtitle:first-of-type {
+      margin-top: 4px;
     }
     ha-form {
       display: block;
@@ -169,26 +233,60 @@ export class OpenscaleCardEditor extends LitElement {
     return data;
   }
 
-  /** One number field per currently-configured metric — built dynamically, since which metrics exist varies per card. */
-  private get _goalFields(): { key: MetricKey; field: string }[] {
-    return (Object.keys(this.config!.metrics) as MetricKey[]).map((key) => ({ key, field: `goal_${key}` }));
+  /** The unit shown inside a goal field — the real unit_of_measurement for entity-backed metrics, the fixed one for computed metrics. */
+  private _unitFor(key: MetricKey): string {
+    const entityId = this.config!.metrics[key]?.entity;
+    if (entityId) {
+      return (this.hassObj?.states[entityId]?.attributes?.unit_of_measurement as string | undefined) ?? '';
+    }
+    return COMPUTED_METRIC_UNITS[key] ?? '';
   }
 
-  private get _goalsSchema(): FormSchemaEntry[] {
-    return this._goalFields.map(({ key, field }) => ({
-      name: field,
-      label: METRIC_LABELS[key],
-      selector: { number: { mode: 'box' } },
+  /** Only the categories that have at least one currently-configured metric, each narrowed to just those fields. */
+  private get _goalCategoriesInUse(): GoalCategory[] {
+    const metrics = this.config!.metrics;
+    return GOAL_CATEGORIES.map((category) => ({
+      ...category,
+      fields: category.fields.filter((f) => !!metrics[f.key]),
+    })).filter((category) => category.fields.length > 0);
+  }
+
+  private _goalsSchemaFor(fields: GoalFieldDef[]): FormSchemaEntry[] {
+    return fields.map(({ key, label }) => ({
+      name: `goal_${key}`,
+      label,
+      selector: { number: { mode: 'box', unit_of_measurement: this._unitFor(key) } },
     }));
   }
 
-  private get _goalsData(): Record<string, number | undefined> {
+  private _goalsDataFor(fields: GoalFieldDef[]): Record<string, number | undefined> {
     const metrics = this.config!.metrics;
     const data: Record<string, number | undefined> = {};
-    for (const { key, field } of this._goalFields) {
-      data[field] = metrics[key]?.goal;
+    for (const { key } of fields) {
+      data[`goal_${key}`] = metrics[key]?.goal;
     }
     return data;
+  }
+
+  private _goalsChangedFor(fields: GoalFieldDef[]) {
+    return (ev: ValueChangedEvent<Record<string, number | undefined>>) => {
+      if (!this.config) {
+        return;
+      }
+      const value = ev.detail.value;
+      const metrics = { ...this.config.metrics };
+      for (const { key } of fields) {
+        const goal = value[`goal_${key}`];
+        if (goal === undefined || goal === null) {
+          const rest = { ...metrics[key] };
+          delete rest.goal;
+          metrics[key] = rest;
+        } else {
+          metrics[key] = { ...metrics[key], goal };
+        }
+      }
+      this._fireConfigChanged({ ...this.config, metrics });
+    };
   }
 
   private _computeLabel = (schema: FormSchemaEntry) => schema.label ?? schema.name;
@@ -252,25 +350,6 @@ export class OpenscaleCardEditor extends LitElement {
     this._fireConfigChanged({ ...this.config, metrics });
   };
 
-  private _goalsChanged = (ev: ValueChangedEvent<Record<string, number | undefined>>) => {
-    if (!this.config) {
-      return;
-    }
-    const value = ev.detail.value;
-    const metrics = { ...this.config.metrics };
-    for (const { key, field } of this._goalFields) {
-      const goal = value[field];
-      if (goal === undefined || goal === null) {
-        const rest = { ...metrics[key] };
-        delete rest.goal;
-        metrics[key] = rest;
-      } else {
-        metrics[key] = { ...metrics[key], goal };
-      }
-    }
-    this._fireConfigChanged({ ...this.config, metrics });
-  };
-
   protected render() {
     if (!this.config || !this.hassObj) {
       return html``;
@@ -304,21 +383,26 @@ export class OpenscaleCardEditor extends LitElement {
         @value-changed=${this._computedMetricsChanged}
       ></ha-form>
 
-      ${this._goalFields.length
+      ${this._goalCategoriesInUse.length
         ? html`
             <div class="section-title">Goals (optional)</div>
             <p class="section-hint">
               Colors a metric's trend arrow by whether it moved closer to (green) or farther from (red) its goal — not by raw
-              direction, since e.g. rising muscle mass is desirable while rising body fat usually isn't. Leave a metric blank for
+              direction, since e.g. rising muscle mass is desirable while rising body fat usually isn't. Leave a field blank for
               a plain, uncolored arrow.
             </p>
-            <ha-form
-              .hass=${this.hassObj}
-              .data=${this._goalsData}
-              .schema=${this._goalsSchema}
-              .computeLabel=${this._computeLabel}
-              @value-changed=${this._goalsChanged}
-            ></ha-form>
+            ${this._goalCategoriesInUse.map(
+              (category) => html`
+                <div class="section-subtitle">${category.title}</div>
+                <ha-form
+                  .hass=${this.hassObj}
+                  .data=${this._goalsDataFor(category.fields)}
+                  .schema=${this._goalsSchemaFor(category.fields)}
+                  .computeLabel=${this._computeLabel}
+                  @value-changed=${this._goalsChangedFor(category.fields)}
+                ></ha-form>
+              `,
+            )}
           `
         : ''}
     `;
