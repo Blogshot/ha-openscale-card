@@ -17,6 +17,8 @@ export interface HassEntity {
 
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  /** Present on the real `hass` object; used to seed a trend baseline from history, see trend.ts. */
+  callApi?: (method: string, path: string) => Promise<unknown>;
 }
 
 type Metrics = OpenscaleCardConfig['metrics'];
@@ -146,7 +148,10 @@ export function resolveMetricRows(
       value,
       formatted,
       unit,
-      trend: tracker.update(key, value),
+      trend:
+        metric.entity && typeof hassObj.callApi === 'function'
+          ? tracker.update(key, value, { hass: { callApi: hassObj.callApi.bind(hassObj) }, entityId: metric.entity })
+          : tracker.update(key, value),
       hint: METRIC_HINTS[key],
     });
   }

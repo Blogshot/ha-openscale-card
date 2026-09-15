@@ -140,7 +140,7 @@ export class OpenscaleCard extends LitElement {
       display_mode: config.display_mode ?? 'grid',
       gender: config.gender ?? 'male',
     };
-    this.trendTracker = new TrendTracker(trendStorageId(this.config));
+    this.trendTracker = new TrendTracker(trendStorageId(this.config), () => this.requestUpdate());
   }
 
   set hass(hass: HomeAssistant) {

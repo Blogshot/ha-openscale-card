@@ -81,7 +81,7 @@ Every entry under `metrics` is optional — metrics without an entry are simply 
 
 ### Trend arrows
 
-Every value shows a small ↑/↓/→ arrow once the card has seen at least two different readings for it, comparing the current value to the previous one. The previous value is saved to the browser's `localStorage`, so it survives a dashboard reload or switching Lovelace views — not just an in-memory value that a fresh card instance would never see again. It's still per-browser: clearing site data, or viewing the same dashboard from a different browser/device, starts over, and the very first render after that never shows an arrow yet.
+Every value shows a small ↑/↓/→ arrow, comparing the current value to the previous one. For the four raw openScale-sync sensors, the very first time the card sees an entity with no baseline yet, it asks Home Assistant's own history for that entity's prior reading — so a sensor with pre-existing data shows the correct arrow right away, not just after the next weigh-in. From then on, the previous value is also saved to the browser's `localStorage`, so it survives a dashboard reload or switching Lovelace views — not just an in-memory value that a fresh card instance would never see again. It's still per-browser: clearing site data, or viewing the same dashboard from a different browser/device, starts over (falling back to a fresh history lookup). Computed metrics (BMI, LBM, BMR, TDEE, ...) have no sensor history of their own to query, so they show an arrow only once the card itself has seen two readings.
 
 ## Development
 

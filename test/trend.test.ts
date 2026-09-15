@@ -1,5 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrendTracker } from '../src/trend';
+
+/** Waits past a full promise chain (e.g. a resolved `callApi` call and its `.then()`), not just one microtask tick. */
+async function flushMicrotasks(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 /** Minimal Storage stand-in — vitest's default node environment has no global `localStorage`. */
 class FakeStorage {
@@ -98,6 +103,73 @@ describe('TrendTracker', () => {
 
       const second = new TrendTracker();
       expect(second.update('weight', 75.2)).toBeUndefined();
+    });
+  });
+
+  describe('seeding a fresh card from Home Assistant history', () => {
+    it('picks up an existing sensor history and reports the trend once it resolves', async () => {
+      // The history endpoint's last entry is the entity's current reading;
+      // the seed should come from the one before it.
+      const callApi = vi.fn().mockResolvedValue([[{ state: '74.0' }, { state: '74.9' }]]);
+      const onSeeded = vi.fn();
+      const tracker = new TrendTracker('sensor.openscale_weight', onSeeded);
+
+      const firstRender = tracker.update('weight', 74.9, { hass: { callApi }, entityId: 'sensor.openscale_weight' });
+      expect(firstRender).toBeUndefined();
+      expect(callApi).toHaveBeenCalledWith('GET', expect.stringContaining('filter_entity_id=sensor.openscale_weight'));
+
+      await flushMicrotasks();
+
+      expect(onSeeded).toHaveBeenCalledTimes(1);
+      // The card re-renders after `onSeeded`; that next call now has a
+      // history-derived baseline to compare the same live value against.
+      expect(tracker.update('weight', 74.9, { hass: { callApi }, entityId: 'sensor.openscale_weight' })).toBe('up');
+    });
+
+    it('does not query history once a real reading already gave a baseline', () => {
+      const callApi = vi.fn();
+      const tracker = new TrendTracker('sensor.openscale_weight');
+      tracker.update('weight', 74.9, { hass: { callApi }, entityId: 'sensor.openscale_weight' });
+
+      // Second call already has an in-memory baseline — no repeat lookup.
+      tracker.update('weight', 75.0, { hass: { callApi }, entityId: 'sensor.openscale_weight' });
+      expect(callApi).toHaveBeenCalledTimes(1);
+    });
+
+    it('never queries history for a metric without an entity id (computed metrics)', () => {
+      const callApi = vi.fn();
+      const tracker = new TrendTracker('sensor.openscale_weight');
+      tracker.update('bmi', 23.6, { hass: { callApi }, entityId: undefined });
+      expect(callApi).not.toHaveBeenCalled();
+    });
+
+    it('ignores a stale history value once a real different reading has already arrived', async () => {
+      const callApi = vi.fn().mockResolvedValue([[{ state: '70.0' }, { state: '74.9' }]]);
+      const onSeeded = vi.fn();
+      const tracker = new TrendTracker('sensor.openscale_weight', onSeeded);
+      const source = { hass: { callApi }, entityId: 'sensor.openscale_weight' };
+
+      tracker.update('weight', 74.9, source);
+      // A real new weigh-in lands before the history request resolves.
+      expect(tracker.update('weight', 75.5, source)).toBe('up');
+
+      await flushMicrotasks();
+
+      expect(onSeeded).not.toHaveBeenCalled();
+      // Still compares against the real previous reading (74.9), not the
+      // now-stale history value (70.0).
+      expect(tracker.update('weight', 75.5, source)).toBe('flat');
+    });
+
+    it('falls back to no trend yet when the history request fails', async () => {
+      const callApi = vi.fn().mockRejectedValue(new Error('network error'));
+      const tracker = new TrendTracker('sensor.openscale_weight');
+      const source = { hass: { callApi }, entityId: 'sensor.openscale_weight' };
+
+      tracker.update('weight', 74.9, source);
+      await flushMicrotasks();
+
+      expect(tracker.update('weight', 74.9, source)).toBe('flat');
     });
   });
 });
