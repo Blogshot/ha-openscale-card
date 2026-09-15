@@ -36,6 +36,21 @@ describe('TrendTracker', () => {
     expect(tracker.update('bmi', 21.0)).toBeUndefined();
   });
 
+  it('keeps reporting the trend across many renders with an unchanged value', () => {
+    // Home Assistant calls `hass` (triggering a re-render) constantly for
+    // entities that have nothing to do with this card — far more often
+    // than openScale-sync publishes a new reading. On a real instance,
+    // dozens of these unrelated re-renders can happen in the same second
+    // right after a genuine change is first observed.
+    const tracker = new TrendTracker();
+    tracker.update('weight', 74.9);
+    expect(tracker.update('weight', 75.2)).toBe('up');
+
+    for (let i = 0; i < 20; i++) {
+      expect(tracker.update('weight', 75.2)).toBe('up');
+    }
+  });
+
   describe('seeding a fresh card from Home Assistant history', () => {
     it('recognizes a real change even from a brand-new tracker instance', async () => {
       // Home Assistant recreates the card element (and a fresh TrendTracker)
@@ -96,9 +111,10 @@ describe('TrendTracker', () => {
       await flushMicrotasks();
 
       expect(onSeeded).not.toHaveBeenCalled();
-      // Still compares against the real previous reading (74.9), not the
-      // now-stale history value (70.0).
-      expect(tracker.update('weight', 75.5, source)).toBe('flat');
+      // Still reports the real "up" from the genuine reading (74.9 -> 75.5),
+      // not overwritten by the now-stale history value (70.0) and not
+      // decayed back to "flat" just because the value hasn't moved since.
+      expect(tracker.update('weight', 75.5, source)).toBe('up');
     });
 
     it('falls back to no trend yet when the history request fails', async () => {

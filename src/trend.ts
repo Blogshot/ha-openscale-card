@@ -68,9 +68,14 @@ async function seedFromHistory(hass: HistorySource, entityId: string): Promise<n
  * caller can request a re-render and pick up the now-known baseline.
  * Computed metrics have no entity of their own to ask history about, so
  * they keep showing no arrow until the card itself has seen two readings.
+ *
+ * Once a genuine change is found, that up/down verdict is cached and kept
+ * as the answer for every following render where the value hasn't moved
+ * again — see the comment in `update()` for why that's necessary at all.
  */
 export class TrendTracker {
   private previous = new Map<MetricKey, number>();
+  private lastTrend = new Map<MetricKey, TrendDirection>();
   private readonly onSeeded?: () => void;
   private readonly seeding = new Set<MetricKey>();
 
@@ -82,17 +87,26 @@ export class TrendTracker {
     const last = this.previous.get(key);
     if (last === undefined) {
       this.trySeedFromHistory(key, value, source);
-    }
-    this.previous.set(key, value);
-
-    if (last === undefined) {
+      this.previous.set(key, value);
       return undefined;
     }
-    const diff = value - last;
-    if (Math.abs(diff) < EPSILON) {
-      return 'flat';
+
+    // Home Assistant calls `hass` (and so triggers a re-render) constantly
+    // for entities that have nothing to do with this card — far more often
+    // than openScale-sync actually publishes a new reading. Only advancing
+    // `previous` on a genuine change, and otherwise replaying the trend we
+    // already settled on, is what makes a real "up"/"down" stay visible
+    // across all of those in-between renders instead of only the one
+    // render where the change was first observed — comparing `value` to
+    // `last` again on every following render (both still the same reading)
+    // would always recompute "flat" and immediately erase it.
+    if (Math.abs(value - last) < EPSILON) {
+      return this.lastTrend.get(key) ?? 'flat';
     }
-    return diff > 0 ? 'up' : 'down';
+    const trend: TrendDirection = value > last ? 'up' : 'down';
+    this.previous.set(key, value);
+    this.lastTrend.set(key, trend);
+    return trend;
   }
 
   private trySeedFromHistory(key: MetricKey, currentValue: number, source?: { hass: HistorySource; entityId?: string }): void {
