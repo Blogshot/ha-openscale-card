@@ -156,7 +156,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
             <circle cx=${point.x} cy=${point.y} r="3" fill=${segment.color}></circle>
             <text x=${leftTextX} y=${labelY - 4} class="callout-label" text-anchor="end">${segment.label}</text>
             <text x=${leftTextX} y=${labelY + 13} class="callout-value" text-anchor="end">
-              ${segment.pct.toFixed(1)}%${renderTrendTspan(segment.trend, segment.trendQuality)}
+              ${segment.pct.toFixed(1)}% ${renderTrendTspan(segment.trend, segment.trendQuality)}
             </text>
           `;
         })}
@@ -166,7 +166,7 @@ export function renderDonut(rows: ResolvedMetric[], gender: Gender): TemplateRes
             <circle cx=${point.x} cy=${point.y} r="3" fill=${segment.color}></circle>
             <text x=${rightTextX} y=${labelY - 4} class="callout-label" text-anchor="start">${segment.label}</text>
             <text x=${rightTextX} y=${labelY + 13} class="callout-value" text-anchor="start">
-              ${segment.pct.toFixed(1)}%${renderTrendTspan(segment.trend, segment.trendQuality)}
+              ${renderTrendTspan(segment.trend, segment.trendQuality)} ${segment.pct.toFixed(1)}%
             </text>
           `;
         })}

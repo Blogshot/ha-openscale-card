@@ -72,7 +72,7 @@ export function renderCallouts(rows: ResolvedMetric[], gender: Gender): Template
             ${row.label}${row.hint ? svg`<title>${row.hint}</title>` : ''}
           </text>
           <text x=${leftTextX} y=${y + 12} class="callout-value" text-anchor="end">
-            ${row.formatted} ${row.unit}${renderTrendTspan(row.trend, row.trendQuality)}
+            ${row.formatted} ${row.unit} ${renderTrendTspan(row.trend, row.trendQuality)}
           </text>
         `,
       )}
@@ -86,7 +86,7 @@ export function renderCallouts(rows: ResolvedMetric[], gender: Gender): Template
             ${row.label}${row.hint ? svg`<title>${row.hint}</title>` : ''}
           </text>
           <text x=${rightTextX} y=${y + 12} class="callout-value" text-anchor="start">
-            ${row.formatted} ${row.unit}${renderTrendTspan(row.trend, row.trendQuality)}
+            ${renderTrendTspan(row.trend, row.trendQuality)} ${row.formatted} ${row.unit}
           </text>
         `,
       )}

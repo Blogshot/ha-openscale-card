@@ -36,10 +36,15 @@ export function renderTrendArrow(trend: TrendDirection | undefined, quality: Tre
  * `text-anchor="end"` row's value shifts left or right by however much
  * narrower or wider that render's specific arrow happens to be, and the
  * numbers across rows stop lining up in a column.
+ *
+ * Carries no spacing of its own — callers place it before or after the
+ * value text (see callouts.ts/donut.ts) and add whatever gap that
+ * ordering needs, since the right amount differs depending on which side
+ * the arrow ends up on.
  */
 export function renderTrendTspan(trend: TrendDirection | undefined, quality: TrendQuality = 'neutral'): SVGTemplateResult | typeof nothing {
   if (!trend) {
     return nothing;
   }
-  return svg` <tspan class="trend trend-${quality}" font-size="22" textLength="16" lengthAdjust="spacingAndGlyphs">${TREND_ARROWS[trend]}</tspan>`;
+  return svg`<tspan class="trend trend-${quality}" font-size="22" textLength="16" lengthAdjust="spacingAndGlyphs">${TREND_ARROWS[trend]}</tspan>`;
 }
