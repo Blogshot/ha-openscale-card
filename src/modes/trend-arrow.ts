@@ -13,7 +13,7 @@ export function renderTrendArrow(trend: TrendDirection | undefined, quality: Tre
   if (!trend) {
     return nothing;
   }
-  return html`<span class="trend trend-${quality}">${TREND_ARROWS[trend]}</span>`;
+  return html`<span class="trend trend-lg trend-${quality}">${TREND_ARROWS[trend]}</span>`;
 }
 
 /**
@@ -22,10 +22,18 @@ export function renderTrendArrow(trend: TrendDirection | undefined, quality: Tre
  * a plain `<span>` there would just render as literal text, and coloring it
  * needs `fill`, not `color`; the CSS for `.trend-good`/`.trend-bad`/
  * `.trend-neutral` sets both).
+ *
+ * `font-size` is set as a presentation attribute rather than through the
+ * shared `.trend-lg` class: an SVG element with a `viewBox` scales every
+ * coordinate — including text in user units — by however much the viewBox
+ * is stretched to fit the card's actual rendered width, so a CSS pixel
+ * value that looks right on the HTML arrow renders far smaller here. This
+ * value is tuned by eye against the surrounding 13-unit label text, not
+ * meant to visually match the HTML version's exact pixel size.
  */
 export function renderTrendTspan(trend: TrendDirection | undefined, quality: TrendQuality = 'neutral'): SVGTemplateResult | typeof nothing {
   if (!trend) {
     return nothing;
   }
-  return svg` <tspan class="trend trend-${quality}">${TREND_ARROWS[trend]}</tspan>`;
+  return svg` <tspan class="trend trend-${quality}" font-size="22">${TREND_ARROWS[trend]}</tspan>`;
 }

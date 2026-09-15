@@ -28,6 +28,7 @@ export class OpenscaleCard extends LitElement {
     .row {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding: 4px 0;
       border-bottom: 1px solid var(--divider-color, #eee);
     }
@@ -47,8 +48,14 @@ export class OpenscaleCard extends LitElement {
       font-weight: 600;
     }
     .trend {
-      margin-left: 4px;
-      font-weight: 400;
+      margin-left: 6px;
+      font-weight: 700;
+      line-height: 1;
+      vertical-align: middle;
+    }
+    /* Only the HTML <span> version (grid rows, donut-extra rows) — an SVG <tspan> sets its own font-size, see trend-arrow.ts. */
+    .trend-lg {
+      font-size: 32px;
     }
     /*
      * Colored by quality (good/bad relative to a configured goal), not by
