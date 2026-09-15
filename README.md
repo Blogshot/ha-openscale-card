@@ -81,7 +81,7 @@ Every entry under `metrics` is optional — metrics without an entry are simply 
 
 ### Trend arrows
 
-Every value shows a small ↑/↓/→ arrow once the card has seen at least two different readings for it, comparing the current value to the previous one. This comparison only lives in the browser tab's memory — it resets when the card is re-added, the dashboard is reloaded, or Home Assistant restarts, so the very first render after any of those never shows an arrow yet.
+Every value shows a small ↑/↓/→ arrow once the card has seen at least two different readings for it, comparing the current value to the previous one. The previous value is saved to the browser's `localStorage`, so it survives a dashboard reload or switching Lovelace views — not just an in-memory value that a fresh card instance would never see again. It's still per-browser: clearing site data, or viewing the same dashboard from a different browser/device, starts over, and the very first render after that never shows an arrow yet.
 
 ## Development
 

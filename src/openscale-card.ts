@@ -8,6 +8,21 @@ import { TrendTracker } from './trend';
 import { OpenscaleCardConfig } from './types';
 
 /**
+ * A stable id for this card's trend storage, derived from the entity ids it
+ * reads from — so the browser-persisted "last value" (see TrendTracker)
+ * survives a config edit that merely toggles which computed metrics are
+ * shown, while two differently-configured cards (e.g. one per person) don't
+ * share or overwrite each other's stored baseline.
+ */
+function trendStorageId(config: OpenscaleCardConfig): string | undefined {
+  const entityIds = Object.values(config.metrics)
+    .map((metric) => metric?.entity)
+    .filter((entity): entity is string => !!entity)
+    .sort();
+  return entityIds.length ? entityIds.join('|') : undefined;
+}
+
+/**
  * OpenscaleCard
  *
  * Reads the entities configured under `metrics` (or derives them, see
@@ -19,7 +34,7 @@ import { OpenscaleCardConfig } from './types';
 export class OpenscaleCard extends LitElement {
   private hassObj?: HomeAssistant;
   private config?: OpenscaleCardConfig;
-  private readonly trendTracker = new TrendTracker();
+  private trendTracker = new TrendTracker();
 
   static styles = css`
     .content {
@@ -125,6 +140,7 @@ export class OpenscaleCard extends LitElement {
       display_mode: config.display_mode ?? 'grid',
       gender: config.gender ?? 'male',
     };
+    this.trendTracker = new TrendTracker(trendStorageId(this.config));
   }
 
   set hass(hass: HomeAssistant) {
