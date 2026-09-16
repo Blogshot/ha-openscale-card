@@ -32,7 +32,7 @@ export interface ResolvedMetric {
   formatted: string;
   unit: string;
   trend?: TrendDirection;
-  /** Whether `trend` is desirable — always 'neutral' unless a `goal` is configured for this metric, see trend.ts. */
+  /** Whether `trend` is desirable — 'good'/'bad' only with a `goal` configured, 'moved' for a real change without one, see trend.ts. */
   trendQuality: TrendQuality;
   /** Shown as a hover hint — explains acronyms like BMR/TDEE/BMI/LBM. */
   hint?: string;

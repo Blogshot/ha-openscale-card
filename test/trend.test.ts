@@ -52,11 +52,11 @@ describe('TrendTracker', () => {
   });
 
   describe('goal-aware trend quality', () => {
-    it('is neutral when no goal is configured, regardless of direction', () => {
+    it('is moved (not neutral) when a real change happens with no goal configured', () => {
       const tracker = new TrendTracker();
       tracker.update('weight', 74.9);
       tracker.update('weight', 75.2);
-      expect(tracker.getQuality('weight')).toBe('neutral');
+      expect(tracker.getQuality('weight')).toBe('moved');
     });
 
     it('is good when the value moved closer to the goal', () => {
@@ -133,6 +133,37 @@ describe('TrendTracker', () => {
       // The card re-renders after `onSeeded`; that next call now has a
       // history-derived baseline to compare the same live value against.
       expect(tracker.update('weight', 74.9, source)).toBe('up');
+    });
+
+    it('skips a duplicate republish of the current value and finds the real prior reading', async () => {
+      // Real openScale-sync entities cycle through "unknown" and re-publish
+      // their last known value on every sync heartbeat, not just on a
+      // genuine new weigh-in — confirmed against the live recorder history
+      // for sensor.openscale_sascha_weight: 74.95, unknown, 74.95 (a
+      // heartbeat, not a second weigh-in), 75.2 (a real change two days
+      // later), unknown, 75.2 (another heartbeat, matching "current").
+      // Naively taking the first numeric entry before "current" lands on
+      // that last heartbeat's 75.2 — identical to current — and reports a
+      // false "flat" instead of the real up from 74.95.
+      const callApi = vi.fn().mockResolvedValue([
+        [
+          { state: '74.95' },
+          { state: 'unknown' },
+          { state: '74.95' },
+          { state: '75.2' },
+          { state: 'unknown' },
+          { state: '75.2' },
+        ],
+      ]);
+      const onSeeded = vi.fn();
+      const tracker = new TrendTracker(onSeeded);
+      const source = { hass: { callApi }, entityId: 'sensor.openscale_sascha_weight' };
+
+      tracker.update('weight', 75.2, source);
+      await flushMicrotasks();
+
+      expect(onSeeded).toHaveBeenCalledTimes(1);
+      expect(tracker.update('weight', 75.2, source)).toBe('up');
     });
 
     it('does not query history once a real reading already gave a baseline', () => {

@@ -5,9 +5,11 @@ import { TrendDirection, TrendQuality, TREND_ARROWS } from '../trend';
  * Renders a small trend arrow, or nothing when there's no prior value to
  * compare against yet (first render after adding the card / restarting HA).
  * The glyph (↑/↓/→) always reflects raw direction; the color reflects
- * `quality` instead — good/bad relative to a configured goal, or neutral
- * when no goal is set. Direction and color are deliberately independent:
- * rising muscle mass is a desirable "up", rising body fat usually isn't.
+ * `quality` instead — good/bad relative to a configured goal, a plain
+ * "moved" accent for a real change with no goal configured, or neutral when
+ * nothing has actually changed. Direction and color are deliberately
+ * independent: rising muscle mass is a desirable "up", rising body fat
+ * usually isn't.
  */
 export function renderTrendArrow(trend: TrendDirection | undefined, quality: TrendQuality = 'neutral'): TemplateResult | typeof nothing {
   if (!trend) {

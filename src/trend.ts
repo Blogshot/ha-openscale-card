@@ -3,11 +3,16 @@ import { MetricKey } from './types';
 export type TrendDirection = 'up' | 'down' | 'flat';
 
 /**
- * Whether a trend is desirable, not just which way it points. `'neutral'`
- * covers both "no goal configured" and "value unchanged" — arrows never
- * imply good/bad without an explicit goal to judge them against.
+ * Whether a trend is desirable, not just which way it points.
+ * - `'good'`/`'bad'` — the value moved closer to / farther from a configured goal.
+ * - `'neutral'` — no real movement since the last reading (still flat), or a
+ *   movement that left the distance to the goal unchanged.
+ * - `'moved'` — a real change happened but there's no goal to judge it
+ *   against, so direction alone can't say good or bad (rising muscle mass is
+ *   desirable, rising body fat usually isn't). Still worth flagging as real
+ *   movement rather than looking identical to "nothing happened".
  */
-export type TrendQuality = 'good' | 'bad' | 'neutral';
+export type TrendQuality = 'good' | 'bad' | 'neutral' | 'moved';
 
 /** Smallest change treated as real movement rather than float noise. */
 const EPSILON = 1e-6;
@@ -21,13 +26,14 @@ export interface HistorySource {
 }
 
 /**
- * Looks up the most recent value an entity held *before* its current
- * reading, via Home Assistant's REST history endpoint. Returns undefined
- * whenever that isn't available for any reason (no `callApi`, the entity
- * has no recorder history, only one state on record, or the request
- * fails) — the caller falls back to waiting for a second live reading.
+ * Looks up the most recent *different* value an entity held before its
+ * current reading, via Home Assistant's REST history endpoint. Returns
+ * undefined whenever that isn't available for any reason (no `callApi`, the
+ * entity has no recorder history, only one distinct value on record, or the
+ * request fails) — the caller falls back to waiting for a second live
+ * reading.
  */
-async function seedFromHistory(hass: HistorySource, entityId: string): Promise<number | undefined> {
+async function seedFromHistory(hass: HistorySource, entityId: string, currentValue: number): Promise<number | undefined> {
   try {
     const start = new Date(Date.now() - HISTORY_LOOKBACK_MS).toISOString();
     // Home Assistant's history endpoint defaults `end_time` to just one day
@@ -44,10 +50,16 @@ async function seedFromHistory(hass: HistorySource, entityId: string): Promise<n
     }
     // The last entry is the entity's current reading (already known from
     // `hass.states`) — walk backwards from just before it for the most
-    // recent one that actually parses as a number.
+    // recent one that both parses as a number and actually differs from the
+    // current value. openScale-sync entities cycle through "unknown" and
+    // re-publish their last known value on every sync heartbeat, not just on
+    // a genuine new weigh-in, so the entry immediately before "current" is
+    // very often just another copy of that same reading rather than a real
+    // prior one — skipping past those too is what finds the last actual
+    // change instead of reporting a false "flat".
     for (let i = series.length - 2; i >= 0; i--) {
       const parsed = parseFloat(series[i]?.state ?? '');
-      if (Number.isFinite(parsed)) {
+      if (Number.isFinite(parsed) && Math.abs(parsed - currentValue) >= EPSILON) {
         return parsed;
       }
     }
@@ -59,14 +71,17 @@ async function seedFromHistory(hass: HistorySource, entityId: string): Promise<n
 
 /**
  * Whether moving from `previous` to `value` brought the reading closer to
- * `goal` (good), farther away (bad), or — with no goal configured — neither.
- * Deliberately ignores raw direction: rising muscle mass is good, rising
- * body fat usually isn't, and which one applies depends entirely on where
- * the goal sits relative to the current reading.
+ * `goal` (good), farther away (bad), or — with no goal configured — neither
+ * ('moved': it's a genuine change, just not one that can be called good or
+ * bad without a goal to measure it against). Deliberately ignores raw
+ * direction: rising muscle mass is good, rising body fat usually isn't, and
+ * which one applies depends entirely on where the goal sits relative to the
+ * current reading. Only called from `update()` once a genuine change (not
+ * merely a repeat of the same value) has already been established.
  */
 function computeTrendQuality(previous: number, value: number, goal?: number): TrendQuality {
   if (goal === undefined) {
-    return 'neutral';
+    return 'moved';
   }
   const distanceBefore = Math.abs(previous - goal);
   const distanceAfter = Math.abs(value - goal);
@@ -147,9 +162,11 @@ export class TrendTracker {
   }
 
   /**
-   * Whether the most recently reported trend for `key` is desirable —
-   * always `'neutral'` until a `goal` has been passed to `update()` at
-   * least once for a genuine change. Call after `update()`.
+   * Whether the most recently reported trend for `key` is desirable — only
+   * `'good'`/`'bad'` once a `goal` has been passed to `update()` for a
+   * genuine change; `'moved'` for a genuine change with no goal configured;
+   * `'neutral'` if `key` has never seen a genuine change at all. Call after
+   * `update()`.
    */
   getQuality(key: MetricKey): TrendQuality {
     return this.lastQuality.get(key) ?? 'neutral';
@@ -160,7 +177,7 @@ export class TrendTracker {
       return;
     }
     this.seeding.add(key);
-    seedFromHistory(source.hass, source.entityId).then((seed) => {
+    seedFromHistory(source.hass, source.entityId, currentValue).then((seed) => {
       // While the request was in flight, a real live reading may already
       // have changed `previous` away from the value that triggered this
       // seed — that already gave a genuine comparison, so a now-stale

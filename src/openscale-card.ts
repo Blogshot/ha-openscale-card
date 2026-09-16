@@ -83,6 +83,12 @@ export class OpenscaleCard extends LitElement {
       color: var(--error-color, #db4437);
       fill: var(--error-color, #db4437);
     }
+    /* A real change with no goal configured to judge it — still worth flagging as movement, just not as good/bad. */
+    .trend-moved {
+      color: var(--info-color, #039be5);
+      fill: var(--info-color, #039be5);
+    }
+    /* No real change since the last reading — nothing to flag at all. */
     .trend-neutral {
       color: var(--secondary-text-color, #888);
       fill: var(--secondary-text-color, #888);
